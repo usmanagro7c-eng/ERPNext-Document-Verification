@@ -1,24 +1,41 @@
 import { Check, Copy, Eye, EyeOff, Clock, Files, Printer } from "lucide-react";
 import { useState } from "react";
+import { ChildTable } from "@/components/ChildTable";
 import { DocumentField } from "@/components/DocumentField";
 import { VerificationStatus } from "@/components/VerificationStatus";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { HIDDEN_FIELDS, PRIMARY_FIELDS } from "@/config/verification";
+import { HIDDEN_FIELDS } from "@/config/verification";
 import { maskHash } from "@/lib/verification-hash";
-import type { VerificationResult, VerifiedDocument } from "@/types/verification";
+import type { DisplaySpec, VerificationResult, VerifiedDocument } from "@/types/verification";
 
-function orderedEntries(document: VerifiedDocument) {
-  const keys = Object.keys(document).filter((k) => !HIDDEN_FIELDS.has(k));
-  const primary = PRIMARY_FIELDS.filter((k) => keys.includes(k));
-  const rest = keys.filter((k) => !primary.includes(k)).sort((a, b) => a.localeCompare(b));
-  return [...primary, ...rest].map((key) => [key, document[key]] as const);
+function scalarEntries(document: VerifiedDocument, spec?: DisplaySpec) {
+  const catalog = [...new Set(["doctype", "name", ...(spec?.fields ?? Object.keys(document))])];
+  const seen = new Set<string>();
+  const entries: [string, unknown][] = [];
+
+  for (const key of catalog) {
+    if (seen.has(key)) continue;
+    seen.add(key);
+    if (HIDDEN_FIELDS.has(key)) continue;
+    const value = document[key];
+    if (Array.isArray(value) || value === undefined || value === null || value === "") continue;
+    entries.push([key, value]);
+  }
+  return entries;
+}
+
+function childTables(document: VerifiedDocument, spec?: DisplaySpec) {
+  return (Object.entries(spec?.childTables ?? {}) as [string, string[]][])
+    .map(([field, subfields]) => ({ field, subfields, rows: document[field] }))
+    .filter(({ rows }) => Array.isArray(rows));
 }
 
 export function VerificationCard({ result }: { result: VerificationResult }) {
   const [revealed, setRevealed] = useState(false);
   const [copied, setCopied] = useState(false);
+  const displayByDoctype = result.displayByDoctype ?? {};
 
   const documents = result.documents?.length
     ? result.documents
@@ -56,26 +73,36 @@ export function VerificationCard({ result }: { result: VerificationResult }) {
             {documents.map((document) => (
               <div
                 key={document.name ?? JSON.stringify(document)}
-                className="rounded-lg border border-border/70 p-4"
+                className="space-y-4 rounded-lg border border-border/70 p-4"
               >
-                <p className="mb-1 text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
                   {document.doctype ?? "Document"} — {document.name ?? "—"}
                 </p>
-                <dl>
-                  {orderedEntries(document).map(([key, value]) => (
-                    <DocumentField key={key} name={key} value={value} />
-                  ))}
+                <dl className="space-y-0">
+                  {scalarEntries(document, displayByDoctype[document.doctype]).map(
+                    ([key, value]) => (
+                      <DocumentField key={key} name={key} value={value} />
+                    ),
+                  )}
                 </dl>
+                {childTables(document, displayByDoctype[document.doctype]).map((table) => (
+                  <ChildTable key={table.field} {...table} />
+                ))}
               </div>
             ))}
           </div>
         ) : documents.length === 1 ? (
           <div className="space-y-6">
-            <dl>
-              {orderedEntries(documents[0]!).map(([key, value]) => (
-                <DocumentField key={key} name={key} value={value} />
-              ))}
+            <dl className="space-y-0">
+              {scalarEntries(documents[0]!, displayByDoctype[documents[0]!.doctype]).map(
+                ([key, value]) => (
+                  <DocumentField key={key} name={key} value={value} />
+                ),
+              )}
             </dl>
+            {childTables(documents[0]!, displayByDoctype[documents[0]!.doctype]).map((table) => (
+              <ChildTable key={table.field} {...table} />
+            ))}
           </div>
         ) : (
           <p className="text-center text-sm text-muted-foreground">

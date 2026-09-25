@@ -55,6 +55,23 @@ console.log(`https://<portal>/verify/${hash}`);
 Then encode that URL into a QR code (any QR tool / `qrcode` npm package) and
 store `hash` in the document's `verification_data` field.
 
+### Which fields show on a verified document
+
+The portal only ever shows the fields you configure (nothing else leaves the
+Worker). Per doctype the display list comes from the `options` field of its
+`verification_data` Custom Field — no code change or redeploy needed:
+
+```
+customer,posting_date,due_date,grand_total
+items:item_name,qty
+```
+
+- Top-level fields: comma-separated, shown in that order.
+- Child tables: `table_fieldname:sub1,sub2` (e.g. the `items` table).
+- Empty `options` (or an unknown doctype) falls back to the built-in map in
+  `src/config/displaySpecs.ts` (Sales/ Purchase / Quotation / Delivery Note +
+  a generic fallback).
+
 ## Development
 
 ```sh

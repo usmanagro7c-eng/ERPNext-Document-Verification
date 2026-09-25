@@ -10,6 +10,14 @@ export interface VerifiedDocument {
   [key: string]: unknown;
 }
 
+/** Which fields are shown for a doctype (and how child tables render). */
+export interface DisplaySpec {
+  /** Top-level fields, in display order (doctype/name are always rendered). */
+  fields: string[];
+  /** Child table field -> subfields to render (e.g. items -> [item_name, qty]). */
+  childTables: Record<string, string[]>;
+}
+
 export interface VerificationResponse {
   success: boolean;
   verified: boolean;
@@ -25,6 +33,8 @@ export interface VerificationResult {
   document?: VerifiedDocument;
   /** Present when the hash resolves to more than one registered document. */
   documents?: VerifiedDocument[];
+  /** Display specs used to slice the returned documents, keyed by doctype. */
+  displayByDoctype?: Record<string, DisplaySpec>;
   hash: string;
   verifiedAt: string;
   message?: string;
