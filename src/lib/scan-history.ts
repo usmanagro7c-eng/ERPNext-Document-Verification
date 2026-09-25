@@ -22,7 +22,18 @@ export function loadScanHistory(): ScanHistoryEntry[] {
     if (!raw) return [];
     const parsed: unknown = JSON.parse(raw);
     if (!Array.isArray(parsed)) return [];
-    return parsed.filter(isEntry).slice(0, MAX_ENTRIES);
+
+    const valid = parsed.filter(isEntry);
+    // Deduplicate by hash to ensure unique records and clean up past duplicates
+    const seen = new Set<string>();
+    const deduplicated: ScanHistoryEntry[] = [];
+    for (const item of valid) {
+      if (!seen.has(item.hash)) {
+        seen.add(item.hash);
+        deduplicated.push(item);
+      }
+    }
+    return deduplicated.slice(0, MAX_ENTRIES);
   } catch {
     return [];
   }
@@ -30,7 +41,10 @@ export function loadScanHistory(): ScanHistoryEntry[] {
 
 export function recordScanHistory(hash: string, status: ScanStatus): ScanHistoryEntry[] {
   const entry: ScanHistoryEntry = { hash, status, verifiedAt: new Date().toISOString() };
-  const next = [entry, ...loadScanHistory()].slice(0, MAX_ENTRIES);
+  // Remove any previous entry with the same hash so it's not duplicated
+  const existing = loadScanHistory().filter((item) => item.hash !== hash);
+  const next = [entry, ...existing].slice(0, MAX_ENTRIES);
+
   if (typeof window !== "undefined") {
     try {
       window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next));

@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { ErrorState } from "@/components/ErrorState";
 import { LoadingState } from "@/components/LoadingState";
 import { VerificationCard } from "@/components/VerificationCard";
@@ -10,6 +10,7 @@ import type { VerificationErrorKind } from "@/types/verification";
 
 export function VerifyView({ hash }: { hash: string | undefined }) {
   const valid = Boolean(hash && isLikelyHash(hash));
+  const recordedHashRef = useRef<string | null>(null);
 
   const query = useQuery({
     queryKey: ["verify", hash],
@@ -21,6 +22,10 @@ export function VerifyView({ hash }: { hash: string | undefined }) {
 
   useEffect(() => {
     if (!valid || !hash || query.isPending || query.isFetching) return;
+
+    // Prevent duplicate recording for the same hash in this view session
+    if (recordedHashRef.current === hash) return;
+
     const status: ScanStatus = query.isError
       ? query.error instanceof VerificationError
         ? query.error.kind === "invalid_hash"
@@ -30,6 +35,8 @@ export function VerifyView({ hash }: { hash: string | undefined }) {
       : query.data?.verified
         ? "verified"
         : "not_found";
+
+    recordedHashRef.current = hash;
     recordScanHistory(hash, status);
   }, [hash, valid, query.isPending, query.isFetching, query.isError, query.error, query.data]);
 
