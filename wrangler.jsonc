@@ -10,6 +10,10 @@
     "directory": ".output/public"
   },
   "no_bundle": true,
+  "vars": {
+    "ERP_NEXT_BASE_URL": "https://dev16.mmmc.pk",
+    "VERIFICATION_DOCTYPES": ""
+  },
   "rules": [
     {
       "type": "ESModule",

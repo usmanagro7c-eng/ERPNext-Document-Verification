@@ -12,7 +12,12 @@ import type { VerificationErrorKind, VerifiedDocument } from "@/types/verificati
  *      (querying the `Custom Field` doctype), falling back to an explicit
  *      VERIFICATION_DOCTYPES list when the API user cannot read it.
  *   2. For each doctype, find the single document whose `verification_data`
- *      equals the scanned hash. Only a whitelist of fields is returned.
+ *      equals the scanned hash. The full row is returned ("fields": ["*"]) —
+ *      ERPNext rejects any non-*-fields list if it names a field the doctype
+ *      does not permit, so no field whitelist is attempted.
+ *
+ * The client then renders only the fields it wants (PRIMARY_FIELDS /
+ * HIDDEN_FIELDS in src/config/verification.ts).
  *
  * Secrets (API key/secret) are read from process.env at runtime, which on the
  * Cloudflare Worker are Secret/Variable bindings — they never enter the client
@@ -21,25 +26,6 @@ import type { VerificationErrorKind, VerifiedDocument } from "@/types/verificati
 
 const FIXED_TIMEOUT_MS = 15_000;
 const DISCOVERY_TTL_MS = 5 * 60 * 1000;
-
-/** Whitelisted document fields returned to the client (plus doctype + name). */
-const DEFAULT_VERIFY_FIELDS = [
-  "name",
-  "status",
-  "docstatus",
-  "company",
-  "customer_name",
-  "supplier_name",
-  "employee_name",
-  "patient_name",
-  "posting_date",
-  "due_date",
-  "grand_total",
-  "currency",
-  "total",
-  "outstanding_amount",
-  "remarks",
-];
 
 export type VerifyProxyResult =
   | {
@@ -197,7 +183,7 @@ async function findDocumentByHash(
 ): Promise<VerifiedDocument | null | "error"> {
   const url = new URL(`/api/resource/${encodeURIComponent(doctype)}`, baseUrl);
   url.searchParams.set("filters", JSON.stringify([["verification_data", "=", hash]]));
-  url.searchParams.set("fields", JSON.stringify(DEFAULT_VERIFY_FIELDS));
+  url.searchParams.set("fields", JSON.stringify(["*"]));
   url.searchParams.set("limit_page_length", "1");
 
   let res: Response;
