@@ -98,8 +98,9 @@ export function VerificationCard({ result }: { result: VerificationResult }) {
 
   // Get primary summary highlights if available
   const primaryDoc = documents[0];
-  const grandTotal = primaryDoc?.grand_total ?? primaryDoc?.total ?? primaryDoc?.rounded_total;
-  const currency = primaryDoc?.currency ?? "";
+  const grandTotal =
+    primaryDoc?.["grand_total"] ?? primaryDoc?.["total"] ?? primaryDoc?.["rounded_total"];
+  const currency = primaryDoc?.["currency"] ?? "";
 
   return (
     <div className="animate-rise space-y-5">

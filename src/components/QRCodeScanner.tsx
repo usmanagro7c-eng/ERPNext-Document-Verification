@@ -111,12 +111,14 @@ export function QRCodeScanner({ onResult, onInvalid, onCancel }: QRCodeScannerPr
   };
 
   const switchCamera = async () => {
-    if (!scannerRef.current || cameras.length <= 1) return;
+    const scanner = scannerRef.current;
     const nextIdx = (currentCameraIndex + 1) % cameras.length;
+    const nextCamera = cameras[nextIdx];
+    if (!scanner || !nextCamera || cameras.length <= 1) return;
     setCurrentCameraIndex(nextIdx);
     try {
-      await scannerRef.current.setCamera(cameras[nextIdx].id);
-      const flashAvailable = await scannerRef.current.hasFlash();
+      await scanner.setCamera(nextCamera.id);
+      const flashAvailable = await scanner.hasFlash();
       setHasFlash(flashAvailable);
       setFlashOn(false);
     } catch {
