@@ -1,20 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { ArrowLeft } from "lucide-react";
+import { Link } from "@tanstack/react-router";
 import { Header } from "@/components/Header";
 import { VerifyView } from "@/components/VerifyView";
 
 export const Route = createFileRoute("/verify/$hash")({
   head: () => ({
     meta: [
-      { title: "Verification Result — Document Verification Portal" },
-      {
-        name: "description",
-        content: "Verification result for a document checked against official records.",
-      },
-      { property: "og:title", content: "Verification Result" },
-      {
-        property: "og:description",
-        content: "Verification result for a document checked against official records.",
-      },
+      { title: "Verification Result — Document Verification" },
+      { name: "description", content: "Document verification result." },
       { name: "robots", content: "noindex" },
     ],
   }),
@@ -42,9 +36,18 @@ function VerifyByPath() {
 
 function VerifyShell({ children }: { children: React.ReactNode }) {
   return (
-    <div className="portal-surface min-h-screen">
+    <div className="min-h-screen bg-background">
       <Header />
-      <main className="mx-auto w-full max-w-2xl px-4 py-8 sm:py-12">{children}</main>
+      <main className="mx-auto w-full max-w-lg px-4 py-8 sm:py-10">
+        <Link
+          to="/"
+          className="mb-5 inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
+        >
+          <ArrowLeft className="size-4" />
+          Back
+        </Link>
+        {children}
+      </main>
     </div>
   );
 }

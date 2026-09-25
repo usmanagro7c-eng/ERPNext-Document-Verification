@@ -2,7 +2,6 @@ import { KeyRound } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { extractVerificationHash } from "@/lib/verification-hash";
 
 export function ManualHashForm({ onSubmit }: { onSubmit: (hash: string) => void }) {
@@ -23,23 +22,24 @@ export function ManualHashForm({ onSubmit }: { onSubmit: (hash: string) => void 
         onSubmit(hash);
       }}
     >
-      <Label htmlFor="verification-code" className="text-sm font-medium">
-        Enter Verification Code Manually
-      </Label>
       <Input
-        id="verification-code"
         value={value}
         onChange={(e) => {
           setValue(e.target.value);
           setError(null);
         }}
-        placeholder="Paste the code or verification link"
+        placeholder="Paste verification code or URL..."
         autoComplete="off"
         spellCheck={false}
-        className="h-12 font-mono text-sm"
+        className="h-11 rounded-xl font-mono text-sm"
       />
-      {error ? <p className="text-sm text-destructive">{error}</p> : null}
-      <Button type="submit" variant="outline" size="lg" className="w-full">
+      {error && <p className="text-xs text-destructive">{error}</p>}
+      <Button
+        type="submit"
+        variant="outline"
+        size="lg"
+        className="h-11 w-full gap-2 rounded-xl border-border/80 text-sm font-semibold hover:border-primary/40 hover:bg-primary/5 hover:text-primary"
+      >
         <KeyRound className="size-4" />
         Verify Code
       </Button>

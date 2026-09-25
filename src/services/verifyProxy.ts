@@ -143,7 +143,10 @@ export const verifyDocumentServer = createServerFn({ method: "GET", strict: { ou
           message: "Unable to reach the verification service.",
         };
       }
-      if (doc) matches.push(sliceDocument(doc, displayByDoctype[doc.doctype]));
+      if (doc) {
+        const spec = resolveDisplaySpec(doc.doctype, displayByDoctype[doc.doctype]);
+        matches.push(sliceDocument(doc, spec));
+      }
     }
 
     if (!matches.length) {
@@ -159,7 +162,8 @@ export const verifyDocumentServer = createServerFn({ method: "GET", strict: { ou
       verified: true,
       displayByDoctype,
     };
-    if (matches.length === 1) result.document = matches[0];
+    const [document] = matches;
+    if (matches.length === 1 && document) result.document = document;
     else result.documents = matches;
     return result;
   });

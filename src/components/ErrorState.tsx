@@ -2,7 +2,6 @@ import { Link } from "@tanstack/react-router";
 import { FileSearch, QrCode, RefreshCw, ShieldAlert, WifiOff } from "lucide-react";
 import type { ComponentType } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import type { VerificationErrorKind } from "@/types/verification";
 
 interface Copy {
@@ -34,13 +33,13 @@ const COPY: Record<VerificationErrorKind, Copy> = {
   rate_limited: {
     icon: ShieldAlert,
     title: "Too Many Attempts",
-    description: "Too many verification attempts were made. Please wait a moment and try again.",
+    description: "Too many verification requests. Please wait a moment and try again.",
     action: "retry",
   },
   network: {
     icon: WifiOff,
     title: "Connection Error",
-    description: "Unable to connect to the verification service.",
+    description: "Unable to connect to the verification service. Check your internet connection.",
     action: "retry",
   },
 };
@@ -56,27 +55,23 @@ export function ErrorState({
   const Icon = copy.icon;
 
   return (
-    <Card className="animate-rise shadow-card">
-      <CardContent className="flex flex-col items-center gap-4 p-6 text-center sm:p-8">
-        <span className="flex size-14 items-center justify-center rounded-full bg-destructive-muted text-destructive">
-          <Icon className="size-7" />
-        </span>
-        <div>
-          <h2 className="text-lg font-semibold tracking-tight">{copy.title}</h2>
-          <p className="mt-2 text-sm text-muted-foreground">{copy.description}</p>
-        </div>
-        <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
-          {onRetry ? (
-            <Button onClick={onRetry} size="lg" className="w-full sm:w-auto">
-              <RefreshCw className="size-4" />
-              {copy.action === "retry" ? "Retry" : "Try Again"}
-            </Button>
-          ) : null}
-          <Button asChild variant="outline" size="lg" className="w-full sm:w-auto">
-            <Link to="/">Back to start</Link>
+    <div className="animate-rise overflow-hidden rounded-2xl border border-border bg-card p-8 text-center shadow-card">
+      <span className="mx-auto mb-5 flex size-14 items-center justify-center rounded-2xl bg-destructive-muted text-destructive">
+        <Icon className="size-7" />
+      </span>
+      <h2 className="text-base font-bold text-foreground">{copy.title}</h2>
+      <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{copy.description}</p>
+      <div className="mt-6 flex flex-col gap-2 sm:flex-row sm:justify-center">
+        {onRetry && (
+          <Button onClick={onRetry} className="gap-2 rounded-xl">
+            <RefreshCw className="size-3.5" />
+            {copy.action === "retry" ? "Retry" : "Try Again"}
           </Button>
-        </div>
-      </CardContent>
-    </Card>
+        )}
+        <Button asChild variant="outline" className="rounded-xl">
+          <Link to="/">Back to Home</Link>
+        </Button>
+      </div>
+    </div>
   );
 }

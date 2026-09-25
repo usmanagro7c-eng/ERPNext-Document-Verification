@@ -1,4 +1,4 @@
-import { CameraOff, Loader2, X } from "lucide-react";
+import { CameraOff, Loader2, X, ScanLine } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { extractVerificationHash } from "@/lib/verification-hash";
@@ -69,68 +69,101 @@ export function QRCodeScanner({ onResult, onInvalid, onCancel }: QRCodeScannerPr
   }, [onResult, onInvalid]);
 
   return (
-    <div className="animate-rise fixed inset-0 z-50 flex flex-col bg-foreground/95 text-background">
-      <div className="flex items-center justify-between px-4 py-4">
-        <div>
-          <p className="text-base font-semibold">Scan QR Code</p>
-          <p className="text-xs opacity-75">Position the QR code inside the frame</p>
+    <div className="animate-fade-in fixed inset-0 z-50 flex flex-col bg-black">
+      {/* Header bar */}
+      <div className="flex items-center justify-between bg-black/80 px-4 py-3 backdrop-blur-sm">
+        <div className="flex items-center gap-2 text-white">
+          <ScanLine className="size-5 text-primary" />
+          <div>
+            <p className="text-sm font-bold">Scan QR Code</p>
+            <p className="text-[11px] text-white/60">
+              {state === "scanning"
+                ? "Scanning — point camera at QR code"
+                : state === "starting"
+                  ? "Starting camera..."
+                  : "Camera unavailable"}
+            </p>
+          </div>
         </div>
         <Button
           variant="ghost"
           size="icon"
           onClick={onCancel}
           aria-label="Cancel scanning"
-          className="text-background hover:bg-background/15 hover:text-background"
+          className="size-9 text-white/70 hover:bg-white/10 hover:text-white"
         >
           <X className="size-5" />
         </Button>
       </div>
 
-      <div className="relative flex flex-1 items-center justify-center overflow-hidden">
+      {/* Camera viewport */}
+      <div className="relative flex flex-1 items-center justify-center overflow-hidden bg-black">
         <video
           ref={videoRef}
-          className="absolute inset-0 size-full object-cover"
+          className="absolute inset-0 size-full object-cover opacity-90"
           playsInline
           muted
         />
 
+        {/* Darkened overlay with clear center */}
+        <div className="absolute inset-0 z-10">
+          <div className="absolute inset-0 bg-black/50" />
+        </div>
+
+        {/* Scanner frame */}
         {state === "scanning" || state === "starting" ? (
-          <div className="relative z-10 aspect-square w-[78%] max-w-sm">
-            <div className="absolute inset-0 rounded-2xl border-2 border-background/25" />
-            <span className="absolute left-0 top-0 size-10 rounded-tl-2xl border-l-4 border-t-4 border-background" />
-            <span className="absolute right-0 top-0 size-10 rounded-tr-2xl border-r-4 border-t-4 border-background" />
-            <span className="absolute bottom-0 left-0 size-10 rounded-bl-2xl border-b-4 border-l-4 border-background" />
-            <span className="absolute bottom-0 right-0 size-10 rounded-br-2xl border-b-4 border-r-4 border-background" />
+          <div className="relative z-20 aspect-square w-[75%] max-w-[300px]">
+            {/* Clear center (no bg) */}
+            <div className="absolute inset-0 rounded-2xl overflow-hidden">
+              <div
+                className="absolute inset-0 bg-transparent"
+                style={{ boxShadow: "0 0 0 9999px rgba(0,0,0,0.55)" }}
+              />
+            </div>
+
+            {/* Corner brackets */}
+            <span className="absolute left-0 top-0 size-10 rounded-tl-2xl border-l-[3px] border-t-[3px] border-primary" />
+            <span className="absolute right-0 top-0 size-10 rounded-tr-2xl border-r-[3px] border-t-[3px] border-primary" />
+            <span className="absolute bottom-0 left-0 size-10 rounded-bl-2xl border-b-[3px] border-l-[3px] border-primary" />
+            <span className="absolute bottom-0 right-0 size-10 rounded-br-2xl border-b-[3px] border-r-[3px] border-primary" />
+
+            {/* Scan line */}
             {state === "scanning" ? (
-              <span className="animate-sweep absolute inset-x-6 top-1/2 h-0.5 bg-background/80" />
+              <span className="animate-sweep absolute inset-x-4 top-1/2 h-0.5 rounded-full bg-primary/80 shadow-[0_0_8px_2px_oklch(0.32_0.12_254_/0.6)]" />
             ) : (
               <span className="absolute inset-0 flex items-center justify-center">
-                <Loader2 className="size-7 animate-spin" />
+                <Loader2 className="size-8 animate-spin text-primary" />
               </span>
             )}
           </div>
         ) : (
-          <div className="relative z-10 mx-auto max-w-sm px-6 text-center">
-            <CameraOff className="mx-auto size-10 opacity-80" />
-            <p className="mt-4 text-base font-semibold">
-              {state === "unsupported" ? "Camera not available" : "Camera access is blocked"}
+          /* Error state */
+          <div className="relative z-20 mx-auto max-w-xs px-6 text-center text-white">
+            <div className="mx-auto mb-4 flex size-16 items-center justify-center rounded-2xl bg-white/10">
+              <CameraOff className="size-8 opacity-80" />
+            </div>
+            <p className="text-base font-bold">
+              {state === "unsupported" ? "Camera not available" : "Camera access blocked"}
             </p>
-            <p className="mt-2 text-sm opacity-80">
+            <p className="mt-2 text-sm leading-relaxed opacity-70">
               {state === "unsupported"
-                ? "This browser or device does not expose a camera. Enter the verification code manually instead."
-                : "Allow camera access in your browser settings (tap the lock or camera icon in the address bar), then reload this page."}
+                ? "This browser or device does not support camera access. Use the manual code entry instead."
+                : "Allow camera access in your browser settings (tap the lock icon in address bar), then reload the page."}
             </p>
           </div>
         )}
       </div>
 
-      <div className="space-y-3 px-4 pb-8 pt-4 text-center">
-        <p className="text-xs opacity-75">Align the QR code inside the square</p>
+      {/* Bottom bar */}
+      <div className="bg-black/80 px-4 pb-8 pt-4 backdrop-blur-sm">
+        <p className="mb-3 text-center text-xs text-white/50">
+          Align the document's QR code within the square frame
+        </p>
         <Button
           variant="outline"
           size="lg"
           onClick={onCancel}
-          className="w-full border-background/40 bg-transparent text-background hover:bg-background/15 hover:text-background"
+          className="h-12 w-full border-white/20 bg-white/5 text-white hover:bg-white/10 hover:text-white"
         >
           Cancel
         </Button>

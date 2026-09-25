@@ -23,7 +23,9 @@ export function VerifyView({ hash }: { hash: string | undefined }) {
     if (!valid || !hash || query.isPending || query.isFetching) return;
     const status: ScanStatus = query.isError
       ? query.error instanceof VerificationError
-        ? query.error.kind
+        ? query.error.kind === "invalid_hash"
+          ? "invalid"
+          : query.error.kind
         : "failed"
       : query.data?.verified
         ? "verified"

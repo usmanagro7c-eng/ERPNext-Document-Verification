@@ -1,11 +1,10 @@
-import { Check, Copy, Eye, EyeOff, Clock, Files, Printer } from "lucide-react";
+import { Check, Clock, Copy, Eye, EyeOff, Files, Printer } from "lucide-react";
 import { useState } from "react";
 import { ChildTable } from "@/components/ChildTable";
 import { DocumentField } from "@/components/DocumentField";
 import { VerificationStatus } from "@/components/VerificationStatus";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { HIDDEN_FIELDS } from "@/config/verification";
 import { maskHash } from "@/lib/verification-hash";
 import type { DisplaySpec, VerificationResult, VerifiedDocument } from "@/types/verification";
@@ -14,7 +13,6 @@ function scalarEntries(document: VerifiedDocument, spec?: DisplaySpec) {
   const catalog = [...new Set(["doctype", "name", ...(spec?.fields ?? Object.keys(document))])];
   const seen = new Set<string>();
   const entries: [string, unknown][] = [];
-
   for (const key of catalog) {
     if (seen.has(key)) continue;
     seen.add(key);
@@ -29,7 +27,9 @@ function scalarEntries(document: VerifiedDocument, spec?: DisplaySpec) {
 function childTables(document: VerifiedDocument, spec?: DisplaySpec) {
   return (Object.entries(spec?.childTables ?? {}) as [string, string[]][])
     .map(([field, subfields]) => ({ field, subfields, rows: document[field] }))
-    .filter(({ rows }) => Array.isArray(rows));
+    .filter((table): table is { field: string; subfields: string[]; rows: unknown[] } =>
+      Array.isArray(table.rows),
+    );
 }
 
 export function VerificationCard({ result }: { result: VerificationResult }) {
@@ -50,104 +50,114 @@ export function VerificationCard({ result }: { result: VerificationResult }) {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      // Clipboard blocked — leave silently.
+      /* ignore */
     }
   };
 
   return (
-    <Card className="animate-rise overflow-hidden shadow-elevated">
-      <CardContent className="space-y-6 p-4 sm:p-6">
-        <VerificationStatus verified={result.verified} />
+    <div className="animate-rise space-y-4">
+      {/* Status banner */}
+      <VerificationStatus verified={result.verified} />
 
-        {multi ? (
-          <div className="space-y-5">
-            <div className="flex flex-wrap items-center gap-2">
-              <Badge variant="secondary" className="gap-1">
-                <Files className="size-3.5" />
-                Multiple Documents
-              </Badge>
-              <span className="text-xs text-muted-foreground">
-                {documents.length} registered documents share this verification code.
-              </span>
+      {/* Document details */}
+      <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-card">
+        <div className="flex items-center justify-between border-b border-border/70 bg-muted/40 px-5 py-3">
+          <p className="text-[13px] font-semibold text-foreground">Document Details</p>
+          {multi && (
+            <Badge variant="secondary" className="gap-1 text-xs">
+              <Files className="size-3" />
+              {documents.length} documents
+            </Badge>
+          )}
+        </div>
+
+        <div className="p-5">
+          {multi ? (
+            <div className="space-y-4">
+              {documents.map((doc) => (
+                <div
+                  key={doc.name ?? JSON.stringify(doc)}
+                  className="rounded-xl border border-border/60 bg-muted/30 p-4"
+                >
+                  <p className="mb-3 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                    {doc.doctype ?? "Document"} — {doc.name ?? "—"}
+                  </p>
+                  <dl>
+                    {scalarEntries(doc, displayByDoctype[doc.doctype]).map(([k, v]) => (
+                      <DocumentField key={k} name={k} value={v} />
+                    ))}
+                  </dl>
+                  {childTables(doc, displayByDoctype[doc.doctype]).map((t) => (
+                    <ChildTable key={t.field} {...t} />
+                  ))}
+                </div>
+              ))}
             </div>
-            {documents.map((document) => (
-              <div
-                key={document.name ?? JSON.stringify(document)}
-                className="space-y-4 rounded-lg border border-border/70 p-4"
-              >
-                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-                  {document.doctype ?? "Document"} — {document.name ?? "—"}
-                </p>
-                <dl className="space-y-0">
-                  {scalarEntries(document, displayByDoctype[document.doctype]).map(
-                    ([key, value]) => (
-                      <DocumentField key={key} name={key} value={value} />
-                    ),
-                  )}
-                </dl>
-                {childTables(document, displayByDoctype[document.doctype]).map((table) => (
-                  <ChildTable key={table.field} {...table} />
-                ))}
-              </div>
-            ))}
-          </div>
-        ) : documents.length === 1 ? (
-          <div className="space-y-6">
-            <dl className="space-y-0">
+          ) : documents.length === 1 ? (
+            <dl className="divide-y divide-border/50">
               {scalarEntries(documents[0]!, displayByDoctype[documents[0]!.doctype]).map(
-                ([key, value]) => (
-                  <DocumentField key={key} name={key} value={value} />
+                ([k, v]) => (
+                  <DocumentField key={k} name={k} value={v} />
                 ),
               )}
+              {childTables(documents[0]!, displayByDoctype[documents[0]!.doctype]).map((t) => (
+                <ChildTable key={t.field} {...t} />
+              ))}
             </dl>
-            {childTables(documents[0]!, displayByDoctype[documents[0]!.doctype]).map((table) => (
-              <ChildTable key={table.field} {...table} />
-            ))}
-          </div>
-        ) : (
-          <p className="text-center text-sm text-muted-foreground">
-            {result.message ?? "No document details were provided for this verification."}
-          </p>
-        )}
-
-        <div className="space-y-3 rounded-lg bg-muted/60 p-4">
-          <div>
-            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-              Verification Code
+          ) : (
+            <p className="py-6 text-center text-sm text-muted-foreground">
+              {result.message ?? "No document details were provided."}
             </p>
-            <div className="mt-1 flex items-center justify-between gap-2">
-              <code className="break-all font-mono text-sm">
-                {revealed ? result.hash : maskHash(result.hash)}
-              </code>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setRevealed((v) => !v)}
-                aria-label={
-                  revealed ? "Hide full verification code" : "Show full verification code"
-                }
-              >
-                {revealed ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
-              </Button>
-            </div>
-          </div>
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <Clock className="size-3.5" />
-            Verified at {new Date(result.verifiedAt).toLocaleString()}
-          </div>
+          )}
         </div>
+      </div>
 
-        <div className="flex flex-col gap-2 sm:flex-row">
-          <Button variant="outline" className="sm:flex-1" onClick={copyLink}>
-            {copied ? <Check className="size-4" /> : <Copy className="size-4" />}
-            {copied ? "Link Copied" : "Copy Result Link"}
-          </Button>
-          <Button variant="outline" className="sm:flex-1" onClick={() => window.print()}>
-            <Printer className="size-4" />
-            Print / Save PDF
-          </Button>
+      {/* Verification code */}
+      <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-card">
+        <div className="border-b border-border/70 bg-muted/40 px-5 py-3">
+          <p className="text-[13px] font-semibold text-foreground">Verification Record</p>
         </div>
-      </CardContent>
-    </Card>
+        <div className="p-5 space-y-3">
+          <div className="flex items-center gap-2 rounded-xl bg-muted/60 px-4 py-3">
+            <code className="min-w-0 flex-1 break-all font-mono text-sm text-foreground">
+              {revealed ? result.hash : maskHash(result.hash)}
+            </code>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="size-8 shrink-0 text-muted-foreground hover:text-foreground"
+              onClick={() => setRevealed((v) => !v)}
+              aria-label={revealed ? "Hide code" : "Show code"}
+            >
+              {revealed ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+            </Button>
+          </div>
+          <p className="flex items-center gap-1.5 px-1 text-xs text-muted-foreground">
+            <Clock className="size-3.5 shrink-0" />
+            Verified at {new Date(result.verifiedAt).toLocaleString()}
+          </p>
+        </div>
+      </div>
+
+      {/* Actions */}
+      <div className="grid grid-cols-2 gap-3">
+        <Button
+          variant="outline"
+          className="h-10 gap-2 rounded-xl border-border/80 text-sm hover:border-primary/40 hover:bg-primary/5 hover:text-primary"
+          onClick={copyLink}
+        >
+          {copied ? <Check className="size-4 text-success" /> : <Copy className="size-4" />}
+          {copied ? "Copied!" : "Copy Link"}
+        </Button>
+        <Button
+          variant="outline"
+          className="h-10 gap-2 rounded-xl border-border/80 text-sm hover:border-primary/40 hover:bg-primary/5 hover:text-primary"
+          onClick={() => window.print()}
+        >
+          <Printer className="size-4" />
+          Print / PDF
+        </Button>
+      </div>
+    </div>
   );
 }

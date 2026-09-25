@@ -1,27 +1,21 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { FileCheck2, Lock, QrCode, ScanLine } from "lucide-react";
+import { KeyRound, QrCode, ScanLine, ShieldCheck } from "lucide-react";
 import { useCallback, useState } from "react";
 import { Header } from "@/components/Header";
 import { ManualHashForm } from "@/components/ManualHashForm";
 import { QRCodeScanner } from "@/components/QRCodeScanner";
 import { ScanHistory } from "@/components/ScanHistory";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { useScanHistory } from "@/hooks/useScanHistory";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Document Verification Portal — Verify a Document" },
+      { title: "Document Verification Portal" },
       {
         name: "description",
         content:
           "Scan a QR code or enter a verification code to confirm the authenticity of an official document.",
-      },
-      { property: "og:title", content: "Document Verification Portal" },
-      {
-        property: "og:description",
-        content: "Scan a QR code to verify the authenticity of an official document.",
       },
     ],
   }),
@@ -48,77 +42,90 @@ function Home() {
   }, []);
 
   return (
-    <div className="portal-surface min-h-screen">
+    <div className="page-bg min-h-screen bg-background">
       <Header />
-      <main className="mx-auto w-full max-w-2xl px-4 py-8 sm:py-12">
-        <div className="animate-rise space-y-6">
-          <div className="text-center">
-            <span className="mx-auto flex size-14 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-              <FileCheck2 className="size-7" />
-            </span>
-            <h1 className="mt-4 text-2xl font-semibold tracking-tight sm:text-3xl">
-              Document Verification
+
+      <main className="mx-auto w-full max-w-lg px-4 py-10 sm:py-14">
+        <div className="animate-rise space-y-5">
+          {/* ── Intro ── */}
+          <div className="space-y-1 pb-1 text-center">
+            <div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-2xl bg-primary/10">
+              <ShieldCheck className="size-6 text-primary" />
+            </div>
+            <h1 className="text-[22px] font-bold tracking-tight text-foreground sm:text-2xl">
+              Verify a Document
             </h1>
-            <p className="mx-auto mt-2 max-w-md text-sm text-muted-foreground sm:text-base">
-              Scan a valid QR code to verify this document.
+            <p className="text-sm text-muted-foreground">
+              Scan the QR code on your document or enter the code manually.
             </p>
           </div>
 
-          <Card className="shadow-card">
-            <CardContent className="space-y-6 p-5 sm:p-7">
-              <Button size="lg" className="h-12 w-full text-base" onClick={() => setScanning(true)}>
-                <ScanLine className="size-5" />
-                Scan QR Code
-              </Button>
-
-              {scanError ? <p className="text-sm text-destructive">{scanError}</p> : null}
-
-              <div className="flex items-center gap-3">
-                <span className="h-px flex-1 bg-border" />
-                <span className="text-xs uppercase tracking-wider text-muted-foreground">or</span>
-                <span className="h-px flex-1 bg-border" />
+          {/* ── QR Scan card ── */}
+          <div className="group rounded-2xl border border-border bg-card p-5 shadow-card transition-shadow hover:shadow-elevated">
+            <div className="mb-4 flex items-center gap-3">
+              <span className="flex size-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                <QrCode className="size-5" />
+              </span>
+              <div>
+                <p className="text-sm font-semibold text-foreground">Scan QR Code</p>
+                <p className="text-xs text-muted-foreground">Use your device camera</p>
               </div>
+            </div>
 
-              <ManualHashForm onSubmit={goToVerify} />
-            </CardContent>
-          </Card>
+            {scanError && (
+              <p className="mb-3 rounded-lg bg-destructive-muted px-3 py-2 text-xs text-destructive">
+                {scanError}
+              </p>
+            )}
 
-          <div className="grid gap-3 sm:grid-cols-2">
-            <InfoTile
-              icon={<QrCode className="size-4" />}
-              title="QR based checks"
-              body="Every issued document carries a unique QR code linked to its verification record."
-            />
-            <InfoTile
-              icon={<Lock className="size-4" />}
-              title="Private by design"
-              body="Only the limited fields released for public verification are ever displayed."
-            />
+            <Button
+              size="lg"
+              className="h-11 w-full gap-2 rounded-xl bg-primary text-sm font-semibold shadow-md hover:bg-primary/90"
+              onClick={() => {
+                setScanError(null);
+                setScanning(true);
+              }}
+            >
+              <ScanLine className="size-4" />
+              Open Camera Scanner
+            </Button>
           </div>
 
-          <ScanHistory entries={entries} onReverify={goToVerify} onClear={clear} />
+          {/* ── Divider ── */}
+          <div className="flex items-center gap-3">
+            <span className="h-px flex-1 bg-border" />
+            <span className="text-xs font-medium text-muted-foreground">or enter manually</span>
+            <span className="h-px flex-1 bg-border" />
+          </div>
+
+          {/* ── Manual entry card ── */}
+          <div className="rounded-2xl border border-border bg-card p-5 shadow-card transition-shadow hover:shadow-elevated">
+            <div className="mb-4 flex items-center gap-3">
+              <span className="flex size-10 items-center justify-center rounded-xl bg-muted text-muted-foreground">
+                <KeyRound className="size-5" />
+              </span>
+              <div>
+                <p className="text-sm font-semibold text-foreground">Enter Code Manually</p>
+                <p className="text-xs text-muted-foreground">Paste code or verification link</p>
+              </div>
+            </div>
+            <ManualHashForm onSubmit={goToVerify} />
+          </div>
+
+          {/* ── Scan History ── */}
+          {entries.length > 0 && (
+            <ScanHistory entries={entries} onReverify={goToVerify} onClear={clear} />
+          )}
         </div>
       </main>
 
-      {scanning ? (
+      {scanning && (
         <QRCodeScanner
           onResult={goToVerify}
           onInvalid={handleInvalid}
           onCancel={() => setScanning(false)}
         />
-      ) : null}
-    </div>
-  );
-}
-
-function InfoTile({ icon, title, body }: { icon: React.ReactNode; title: string; body: string }) {
-  return (
-    <div className="rounded-xl border border-border bg-card/70 p-4">
-      <div className="flex items-center gap-2 text-primary">
-        {icon}
-        <p className="text-sm font-semibold text-foreground">{title}</p>
-      </div>
-      <p className="mt-2 text-xs leading-relaxed text-muted-foreground">{body}</p>
+      )}
     </div>
   );
 }

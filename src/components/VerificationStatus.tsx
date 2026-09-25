@@ -5,30 +5,48 @@ export function VerificationStatus({ verified }: { verified: boolean }) {
   return (
     <div
       className={cn(
-        "flex flex-col items-center gap-3 rounded-xl px-6 py-7 text-center",
+        "relative overflow-hidden rounded-2xl px-6 py-8 text-center",
         verified ? "bg-success-muted" : "bg-warning-muted",
       )}
     >
-      <span
+      {/* Subtle corner accent */}
+      <div
         className={cn(
-          "animate-seal flex size-14 items-center justify-center rounded-full",
-          verified ? "bg-success text-success-foreground" : "bg-warning text-warning-foreground",
+          "pointer-events-none absolute -right-6 -top-6 size-24 rounded-full opacity-25 blur-2xl",
+          verified ? "bg-success" : "bg-warning",
         )}
-      >
-        {verified ? <BadgeCheck className="size-8" /> : <ShieldAlert className="size-8" />}
-      </span>
-      <div>
-        <p
+      />
+
+      <div className="relative flex flex-col items-center gap-4">
+        <span
           className={cn(
-            "text-xs font-semibold uppercase tracking-[0.18em]",
-            verified ? "text-success" : "text-warning",
+            "animate-seal flex size-16 items-center justify-center rounded-2xl shadow-lg",
+            verified
+              ? "bg-success text-success-foreground shadow-success/20"
+              : "bg-warning text-warning-foreground shadow-warning/20",
           )}
         >
-          {verified ? "Verified" : "Not Verified"}
-        </p>
-        <h2 className="mt-1 text-lg font-semibold tracking-tight sm:text-xl">
-          {verified ? "Document Verified Successfully" : "Document Could Not Be Verified"}
-        </h2>
+          {verified ? <BadgeCheck className="size-9" /> : <ShieldAlert className="size-9" />}
+        </span>
+
+        <div>
+          <p
+            className={cn(
+              "text-[11px] font-bold uppercase tracking-[0.2em]",
+              verified ? "text-success" : "text-warning",
+            )}
+          >
+            {verified ? "✓ Verified" : "⚠ Not Verified"}
+          </p>
+          <h2 className="mt-1 text-xl font-bold tracking-tight text-foreground">
+            {verified ? "Document Verified" : "Could Not Verify"}
+          </h2>
+          <p className="mt-1.5 text-sm text-muted-foreground">
+            {verified
+              ? "This document is authentic and matches official records."
+              : "This document could not be confirmed against official records."}
+          </p>
+        </div>
       </div>
     </div>
   );
