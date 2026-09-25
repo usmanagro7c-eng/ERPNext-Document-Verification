@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
+  <defs>
+    <linearGradient id="bgGrad" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#1E293B"/>
+      <stop offset="100%" stop-color="#0F172A"/>
+    </linearGradient>
+    <linearGradient id="shieldGrad" x1="8" y1="6" x2="40" y2="42" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#3B82F6"/>
+      <stop offset="100%" stop-color="#1D4ED8"/>
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="130%">
+      <feDropShadow dx="0" dy="2" stdDeviation="1.5" flood-color="#000000" flood-opacity="0.35"/>
+    </filter>
+  </defs>
+
+  <!-- App Rounded Tile Base -->
+  <rect width="48" height="48" rx="11" fill="url(#bgGrad)"/>
+  <rect x="0.5" y="0.5" width="47" height="47" rx="10.5" stroke="#FFFFFF" stroke-opacity="0.12"/>
+
+  <!-- Shield Body -->
+  <path d="M24 7L38 12.8V23.5C38 32.2 32.1 40.1 24 42.5C15.9 40.1 10 32.2 10 23.5V12.8L24 7Z" fill="url(#shieldGrad)" filter="url(#shadow)"/>
+
+  <!-- Inner Soft Bevel -->
+  <path d="M24 9.5L35.5 14.3V23C35.5 30.2 30.6 36.8 24 38.9C17.4 36.8 12.5 30.2 12.5 23V14.3L24 9.5Z" fill="#FFFFFF" fill-opacity="0.12"/>
+
+  <!-- White Center Badge -->
+  <circle cx="24" cy="25" r="8.5" fill="#FFFFFF" filter="url(#shadow)"/>
+
+  <!-- Green Verification Check -->
+  <path d="M19.5 25.2L22.5 28.2L28.8 21.8" stroke="#059669" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
