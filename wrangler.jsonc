@@ -1,6 +1,6 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "usman-agro7c",
+  "name": "verification",
   "account_id": "55ced6868f059310735db3e9fe0eaf10",
   "compatibility_date": "2026-09-25",
   "compatibility_flags": ["nodejs_compat"],
