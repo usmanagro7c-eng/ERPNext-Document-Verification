@@ -80,18 +80,16 @@ npm i
 npm run dev
 ```
 
-For quick UI work the bundled mock needs no backend at all:
+Local development talks to the same server proxy the Worker uses — it reads
+the ERPNext connection from the runtime variables in `.env` (via
+`process.env` on the dev server):
 
 ```sh
-# .env: VITE_USE_MOCK_VERIFICATION=true  (already the default in .env.example)
 npm run dev
 ```
 
-With the mock enabled there is no network: the client returns a fixed
-"verified" document for any code not starting with `notfound`.
-
-To try the real flow locally, export the runtime variables in the shell before
-`npm run dev` (they are read via `process.env`):
+The default `.env` already points at the connected ERPNext site. To override,
+set the runtime variables in the shell before `npm run dev`:
 
 ```sh
 $env:ERP_NEXT_BASE_URL="https://erp.example.com"      # PowerShell
@@ -101,12 +99,6 @@ npm run dev
 ```
 
 ## Environment
-
-### Client (`VITE_` — bundled, never secret)
-
-| Variable | Meaning |
-| --- | --- |
-| `VITE_USE_MOCK_VERIFICATION` | `true` → isolated dev mock; always `false` in production. |
 
 ### Runtime (read via `process.env` on the Worker / dev server — never in the client bundle)
 
@@ -149,7 +141,6 @@ This project's build already targets Cloudflare (nitro preset).
    - **Secret**: `ERP_NEXT_API_KEY` (Encrypted)
    - **Secret**: `ERP_NEXT_API_SECRET` (Encrypted)
    - **Variable** (optional): `VERIFICATION_DOCTYPES=Sales Invoice, Purchase Invoice`
-   - **Variable**: `VITE_USE_MOCK_VERIFICATION=false`
 
    Secrets must be set as **Secret (Encrypted)** bindings so they never appear
    in the Worker code or logs.
