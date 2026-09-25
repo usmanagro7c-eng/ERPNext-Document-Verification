@@ -16,7 +16,7 @@ export function VerifyView({ hash }: { hash: string | undefined }) {
     queryFn: () => verifyDocument(hash as string),
     enabled: valid,
     retry: false,
-    staleTime: 60_000,
+    staleTime: 5 * 60_000,
   });
 
   useEffect(() => {
