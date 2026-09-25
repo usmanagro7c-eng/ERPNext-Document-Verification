@@ -13,14 +13,21 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-node_modules
-dist
-dist-ssr
-.output
-.vinxi
+# Dependencies
+node_modules/
+
+# Production builds & cache
+dist/
+dist-ssr/
+.output/
+.vinxi/
 .tanstack/**
-.nitro
+.nitro/
+.vite/
+.vite-temp/
+*.tsbuildinfo
 *.local
+coverage/
 
 # Wrangler / Cloudflare
 .wrangler/
@@ -29,7 +36,7 @@ dist-ssr
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
-.idea
+.idea/
 .DS_Store
 *.suo
 *.ntvs*

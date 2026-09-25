@@ -45,10 +45,10 @@ Hash + QR generator (runs anywhere, e.g. on your machine — never on ERPNext):
 
 ```js
 // node gen.mjs  (uses the HMAC secret you keep private)
-import { createHmac } from 'node:crypto';
-const secret = 'CHANGE_ME';            // keep secret, used to generate hashes
-const doc = { doctype: 'Sales Invoice', name: 'ACC-SINV-2026-00042' };
-const hash = createHmac('sha256', secret).update(`${doc.doctype}.${doc.name}`).digest('hex');
+import { createHmac } from "node:crypto";
+const secret = "CHANGE_ME"; // keep secret, used to generate hashes
+const doc = { doctype: "Sales Invoice", name: "ACC-SINV-2026-00042" };
+const hash = createHmac("sha256", secret).update(`${doc.doctype}.${doc.name}`).digest("hex");
 console.log(`https://<portal>/verify/${hash}`);
 ```
 
@@ -102,11 +102,11 @@ npm run dev
 
 ### Runtime (read via `process.env` on the Worker / dev server — never in the client bundle)
 
-| Variable | Meaning |
-| --- | --- |
-| `ERP_NEXT_BASE_URL` | ERPNext site, e.g. `https://erp.example.com`. |
-| `ERP_NEXT_API_KEY` | API Key of the restricted service user (secret). |
-| `ERP_NEXT_API_SECRET` | API Secret of the service user (secret). |
+| Variable                | Meaning                                                                            |
+| ----------------------- | ---------------------------------------------------------------------------------- |
+| `ERP_NEXT_BASE_URL`     | ERPNext site, e.g. `https://erp.example.com`.                                      |
+| `ERP_NEXT_API_KEY`      | API Key of the restricted service user (secret).                                   |
+| `ERP_NEXT_API_SECRET`   | API Secret of the service user (secret).                                           |
 | `VERIFICATION_DOCTYPES` | Optional comma-separated doctype fallback, e.g. `Sales Invoice, Purchase Invoice`. |
 
 Secrets must never be placed in `VITE_*` variables or committed to the repo.
@@ -115,13 +115,13 @@ Secrets must never be placed in `VITE_*` variables or committed to the repo.
 
 The server function maps ERPNext responses onto the portal's error kinds.
 
-| Result | Meaning |
-| --- | --- |
-| `verified` | Document found; `document` or `documents[]` returned |
-| `invalid_hash` | Invalid hash format |
-| `not_found` | No document matches the hash |
-| `network` | Upstream unreachable |
-| `failed` | Misconfiguration (missing URL/credentials, no doctypes, bad permissions) |
+| Result         | Meaning                                                                  |
+| -------------- | ------------------------------------------------------------------------ |
+| `verified`     | Document found; `document` or `documents[]` returned                     |
+| `invalid_hash` | Invalid hash format                                                      |
+| `not_found`    | No document matches the hash                                             |
+| `network`      | Upstream unreachable                                                     |
+| `failed`       | Misconfiguration (missing URL/credentials, no doctypes, bad permissions) |
 
 ## Deploy to Cloudflare Workers
 

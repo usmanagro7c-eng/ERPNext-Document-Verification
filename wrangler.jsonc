@@ -7,17 +7,17 @@
   "main": ".output/server/index.mjs",
   "assets": {
     "binding": "ASSETS",
-    "directory": ".output/public"
+    "directory": ".output/public",
   },
   "no_bundle": true,
   "vars": {
     "ERP_NEXT_BASE_URL": "https://dev16.mmmc.pk",
-    "VERIFICATION_DOCTYPES": ""
+    "VERIFICATION_DOCTYPES": "",
   },
   "rules": [
     {
       "type": "ESModule",
-      "globs": ["**/*.mjs", "**/*.js"]
-    }
-  ]
+      "globs": ["**/*.mjs", "**/*.js"],
+    },
+  ],
 }
