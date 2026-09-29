@@ -2,9 +2,11 @@ import { Link } from "@tanstack/react-router";
 import { Moon, ShieldCheck, Sun } from "lucide-react";
 import { useTheme } from "@/hooks/useTheme";
 import { Button } from "@/components/ui/button";
+import { useCompanyName } from "@/components/CompanyProvider";
 
 export function Header() {
   const { theme, toggleTheme } = useTheme();
+  const { companyName } = useCompanyName();
 
   return (
     <header className="sticky top-0 z-40 w-full border-b border-border/60 bg-card/85 backdrop-blur-md transition-colors">
@@ -21,7 +23,7 @@ export function Header() {
           <div className="leading-snug">
             <div className="flex items-center gap-2">
               <p className="text-sm font-bold tracking-tight text-foreground sm:text-[15px]">
-                ERPNext Verification
+                {companyName ? `${companyName} Verification` : "Document Verification"}
               </p>
               <span className="hidden rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary sm:inline-block">
                 Portal

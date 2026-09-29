@@ -10,6 +10,7 @@ import {
 import { type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
+import { CompanyProvider } from "@/components/CompanyProvider";
 
 function NotFoundComponent() {
   return (
@@ -120,8 +121,11 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-      <Outlet />
+      {/* Company name is read from the ERP so the portal brands itself correctly. */}
+      <CompanyProvider>
+        {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
+        <Outlet />
+      </CompanyProvider>
     </QueryClientProvider>
   );
 }

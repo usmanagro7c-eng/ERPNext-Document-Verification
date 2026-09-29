@@ -1,7 +1,9 @@
 import { CheckCircle2, ShieldAlert, ShieldCheck } from "lucide-react";
+import { useCompanyName } from "@/components/CompanyProvider";
 import { cn } from "@/lib/utils";
 
 export function VerificationStatus({ verified }: { verified: boolean }) {
+  const { brand } = useCompanyName();
   return (
     <div
       className={cn(
@@ -65,8 +67,8 @@ export function VerificationStatus({ verified }: { verified: boolean }) {
 
           <p className="mx-auto mt-2 max-w-md text-xs sm:text-sm leading-relaxed text-muted-foreground">
             {verified
-              ? "This document's cryptographic signature perfectly matches the official ERPNext record. No tampering has been detected."
-              : "This document could not be matched against official ERPNext database records. Please double-check the QR code or link."}
+              ? `This document's cryptographic signature perfectly matches the official ${brand} record. No tampering has been detected.`
+              : `This document could not be matched against official ${brand} records. Please double-check the QR code or link.`}
           </p>
         </div>
       </div>

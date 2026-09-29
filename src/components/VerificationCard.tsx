@@ -1,10 +1,11 @@
-import { FileCheck, Files, RotateCcw } from "lucide-react";
 import { Link } from "@tanstack/react-router";
+import { FileCheck, Files, RotateCcw } from "lucide-react";
+import { useCompanyName } from "@/components/CompanyProvider";
 import { ChildTable } from "@/components/ChildTable";
 import { DocumentField } from "@/components/DocumentField";
 import { VerificationStatus } from "@/components/VerificationStatus";
 import { Badge } from "@/components/ui/badge";
-import { HIDDEN_FIELDS } from "@/config/verification";
+import { doctypeLabel, HIDDEN_FIELDS } from "@/config/verification";
 import type { DisplaySpec, VerificationResult, VerifiedDocument } from "@/types/verification";
 
 function scalarEntries(document: VerifiedDocument, spec?: DisplaySpec) {
@@ -15,7 +16,9 @@ function scalarEntries(document: VerifiedDocument, spec?: DisplaySpec) {
     if (seen.has(key)) continue;
     seen.add(key);
     if (HIDDEN_FIELDS.has(key)) continue;
-    const value = document[key];
+    // The details table lists doctype too, so the raw ERP name would surface
+    // here even after the summary chip was renamed.
+    const value = key === "doctype" ? doctypeLabel(document.doctype) : document[key];
     if (Array.isArray(value) || value === undefined || value === null || value === "") continue;
     entries.push([key, value]);
   }
@@ -31,6 +34,7 @@ function childTables(document: VerifiedDocument, spec?: DisplaySpec) {
 }
 
 export function VerificationCard({ result }: { result: VerificationResult }) {
+  const { brand } = useCompanyName();
   const displayByDoctype = result.displayByDoctype ?? {};
 
   const documents = result.documents?.length
@@ -58,14 +62,14 @@ export function VerificationCard({ result }: { result: VerificationResult }) {
             <div className="space-y-1">
               <div className="flex items-center gap-2">
                 <span className="rounded-lg bg-primary/10 px-2 py-0.5 text-xs font-bold text-primary uppercase">
-                  {primaryDoc.doctype ?? "Document"}
+                  {doctypeLabel(primaryDoc.doctype)}
                 </span>
                 <span className="text-sm font-mono font-bold text-foreground">
                   {primaryDoc.name ?? "—"}
                 </span>
               </div>
               <p className="text-xs text-muted-foreground">
-                Cryptographically validated against ERPNext Database
+                Cryptographically validated against {brand} records
               </p>
             </div>
 
@@ -109,7 +113,7 @@ export function VerificationCard({ result }: { result: VerificationResult }) {
                 >
                   <div className="mb-4 flex items-center justify-between border-b border-border/60 pb-3">
                     <span className="rounded-lg bg-primary/10 px-2.5 py-1 text-xs font-bold text-primary uppercase">
-                      {doc.doctype ?? "Document"} #{idx + 1}
+                      {doctypeLabel(doc.doctype)} #{idx + 1}
                     </span>
                     <span className="font-mono text-xs font-bold text-foreground">
                       {doc.name ?? "—"}

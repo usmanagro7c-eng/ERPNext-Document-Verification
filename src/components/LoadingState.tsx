@@ -1,7 +1,9 @@
 import { Loader2, ShieldCheck } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useCompanyName } from "@/components/CompanyProvider";
 
 export function LoadingState({ label = "Verifying document integrity..." }: { label?: string }) {
+  const { brand } = useCompanyName();
   return (
     <div className="animate-rise overflow-hidden rounded-2xl border border-border/80 bg-card shadow-card">
       <div className="relative flex flex-col items-center gap-4 px-6 py-12 text-center overflow-hidden">
@@ -16,7 +18,7 @@ export function LoadingState({ label = "Verifying document integrity..." }: { la
         <div className="space-y-1.5 z-10">
           <p className="text-base font-bold text-foreground">{label}</p>
           <p className="text-xs text-muted-foreground">
-            Cryptographically validating hash against official ERPNext records...
+            Cryptographically validating hash against official {brand} records...
           </p>
         </div>
 

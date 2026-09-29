@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate, useSearch } from "@tanstack/react-router";
 import { FileCheck2, Image as ImageIcon, KeyRound, QrCode, ScanLine, Sparkles } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useCompanyName } from "@/components/CompanyProvider";
 import { Header } from "@/components/Header";
 import { ManualHashForm } from "@/components/ManualHashForm";
 import { QRCodeScanner } from "@/components/QRCodeScanner";
@@ -17,13 +18,15 @@ import { extractVerificationHash } from "@/lib/verification-hash";
 const AUTO_VERIFY_DELAY_MS = 1200;
 
 export const Route = createFileRoute("/")({
+  // Meta is static, so it cannot carry the company name — keep it neutral and
+  // let the header render the brand in the page body.
   head: () => ({
     meta: [
-      { title: "Document Verification Portal — ERPNext Official" },
+      { title: "Document Verification Portal" },
       {
         name: "description",
         content:
-          "Scan a QR code or enter a verification code to confirm the authenticity and integrity of an official ERPNext document.",
+          "Scan a QR code or enter a verification code to confirm the authenticity and integrity of an official document.",
       },
     ],
   }),
@@ -32,6 +35,7 @@ export const Route = createFileRoute("/")({
 
 function Home() {
   const navigate = useNavigate();
+  const { brand, companyName } = useCompanyName();
   // A device's native QR scanner opens the printed URL directly, bypassing the
   // in-app camera. Read the params loosely (no validateSearch) so that adding
   // deep-link support does not force a `search` prop onto every <Link to="/">.
@@ -182,7 +186,7 @@ function Home() {
               </h1>
               <p className="mx-auto max-w-md text-sm leading-relaxed text-muted-foreground">
                 Confirm that invoices, orders, certificates, and official documents are authentic
-                and directly issued by ERPNext.
+                and directly issued by {brand}.
               </p>
             </div>
 
@@ -303,7 +307,7 @@ function Home() {
         <div className="mx-auto flex max-w-xl items-center justify-between px-4 text-[11px]">
           <span className="flex items-center gap-1.5 font-medium">
             <FileCheck2 className="size-3.5 text-primary" />
-            ERPNext Verified Portal
+            {companyName ? `${companyName} Verified Portal` : "Verified Document Portal"}
           </span>
           <span>End-to-End Cryptographic Validation</span>
         </div>

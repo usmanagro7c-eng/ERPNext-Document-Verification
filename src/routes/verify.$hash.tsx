@@ -1,12 +1,14 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeft, Home, ShieldCheck } from "lucide-react";
+import { useCompanyName } from "@/components/CompanyProvider";
 import { Header } from "@/components/Header";
 import { VerifyView } from "@/components/VerifyView";
 
 export const Route = createFileRoute("/verify/$hash")({
+  // Meta is static, so it cannot carry the company name — keep it neutral.
   head: () => ({
     meta: [
-      { title: "Verification Result — ERPNext Document Verification" },
+      { title: "Verification Result — Document Verification" },
       { name: "description", content: "Official document authenticity verification record." },
       { name: "robots", content: "noindex" },
     ],
@@ -34,6 +36,7 @@ function VerifyByPath() {
 }
 
 function VerifyShell({ children }: { children: React.ReactNode }) {
+  const { brand } = useCompanyName();
   return (
     <div className="page-bg min-h-screen bg-background flex flex-col justify-between">
       <div>
@@ -60,7 +63,7 @@ function VerifyShell({ children }: { children: React.ReactNode }) {
 
       <footer className="border-t border-border/60 bg-card/40 py-4 text-center text-xs text-muted-foreground">
         <div className="mx-auto flex max-w-3xl items-center justify-between px-4 text-[11px]">
-          <span>Official ERPNext Verification Service</span>
+          <span>Official {brand} Verification Service</span>
           <Link to="/" className="inline-flex items-center gap-1 hover:text-foreground">
             <Home className="size-3" />
             <span>Home</span>
