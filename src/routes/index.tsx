@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, useSearch } from "@tanstack/react-router";
 import { FileCheck2, Image as ImageIcon, KeyRound, QrCode, ScanLine, Sparkles } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Header } from "@/components/Header";
@@ -32,6 +32,12 @@ export const Route = createFileRoute("/")({
 
 function Home() {
   const navigate = useNavigate();
+  // A device's native QR scanner opens the printed URL directly, bypassing the
+  // in-app camera. Read the params loosely (no validateSearch) so that adding
+  // deep-link support does not force a `search` prop onto every <Link to="/">.
+  const searchParams = useSearch({ strict: false }) as Record<string, string | undefined>;
+  const linkHash =
+    searchParams["hash"] ?? searchParams["code"] ?? searchParams["verification_data"];
   const [scanning, setScanning] = useState(false);
   const [scanError, setScanError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"scan" | "manual">("scan");
@@ -96,6 +102,35 @@ function Home() {
     },
     [navigate],
   );
+
+  /**
+   * A native QR scanner opens `/?hash=...` in the browser without ever touching
+   * the in-app camera, so the deep link runs the exact same paste-then-verify
+   * flow a camera scan does.
+   */
+  useEffect(() => {
+    if (!linkHash) return;
+
+    const parsed = extractVerificationHash(linkHash);
+
+    // Consume the param from the address bar. Without this, Back from the result
+    // page returns to `/?hash=...` and this effect fires again, leaving the user
+    // with a dead Back button. Done via history directly (preserving the router's
+    // state) so it cannot re-enter this effect through a router search change.
+    if (typeof window !== "undefined" && window.location.search) {
+      window.history.replaceState(
+        window.history.state,
+        "",
+        `${window.location.pathname}${window.location.hash}`,
+      );
+    }
+
+    if (parsed) {
+      handleScanSuccess(parsed);
+    } else {
+      setScanError("This link does not contain a valid verification code.");
+    }
+  }, [linkHash, handleScanSuccess]);
 
   const handleInvalid = useCallback(() => {
     setScanning(false);
