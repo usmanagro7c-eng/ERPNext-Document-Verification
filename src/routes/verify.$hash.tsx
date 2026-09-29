@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeft, Home, ShieldCheck } from "lucide-react";
 import { useCompanyName } from "@/components/CompanyProvider";
+import { CopyrightLine } from "@/components/CopyrightLine";
 import { Header } from "@/components/Header";
 import { VerifyView } from "@/components/VerifyView";
 
@@ -69,6 +70,7 @@ function VerifyShell({ children }: { children: React.ReactNode }) {
             <span>Home</span>
           </Link>
         </div>
+        <CopyrightLine />
       </footer>
     </div>
   );

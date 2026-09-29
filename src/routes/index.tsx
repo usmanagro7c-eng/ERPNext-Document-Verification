@@ -2,6 +2,7 @@ import { createFileRoute, useNavigate, useSearch } from "@tanstack/react-router"
 import { FileCheck2, Image as ImageIcon, KeyRound, QrCode, ScanLine, Sparkles } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useCompanyName } from "@/components/CompanyProvider";
+import { CopyrightLine } from "@/components/CopyrightLine";
 import { Header } from "@/components/Header";
 import { ManualHashForm } from "@/components/ManualHashForm";
 import { QRCodeScanner } from "@/components/QRCodeScanner";
@@ -311,6 +312,7 @@ function Home() {
           </span>
           <span>End-to-End Cryptographic Validation</span>
         </div>
+        <CopyrightLine />
       </footer>
 
       {scanning && (
