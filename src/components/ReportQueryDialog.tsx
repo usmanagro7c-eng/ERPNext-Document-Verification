@@ -66,7 +66,6 @@ export function ReportQueryDialog({
     field?: ReportQueryField | undefined;
   } | null>(null);
   const [success, setSuccess] = useState<{
-    leadName: string;
     attachmentFailed: boolean;
   } | null>(null);
 
@@ -150,7 +149,7 @@ export function ReportQueryDialog({
 
     setSubmitting(false);
     if (result.ok) {
-      setSuccess({ leadName: result.leadName, attachmentFailed: Boolean(result.attachmentFailed) });
+      setSuccess({ attachmentFailed: Boolean(result.attachmentFailed) });
     } else {
       setFailure({ message: result.message, field: result.field });
     }
@@ -175,9 +174,6 @@ export function ReportQueryDialog({
                 Thank you. Our team will look into this code and contact you shortly.
               </DialogDescription>
             </div>
-            <p className="rounded-xl border border-border/70 bg-muted/30 px-3 py-2 text-[11px] text-muted-foreground">
-              Your reference: <span className="font-mono font-semibold">{success.leadName}</span>
-            </p>
             {success.attachmentFailed && (
               <p className="flex items-start gap-2 rounded-xl border border-warning/25 bg-warning-muted px-3 py-2 text-left text-[11px] font-medium text-warning">
                 <AlertTriangle className="mt-0.5 size-3.5 shrink-0" />
