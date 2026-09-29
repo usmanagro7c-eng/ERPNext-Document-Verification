@@ -20,6 +20,13 @@ import { createServerFn } from "@tanstack/react-start";
  */
 
 const COMPANY_TTL_MS = 5 * 60 * 1000;
+/**
+ * A failed lookup is cached far more briefly than a successful one. With a
+ * single TTL, one slow ERP response on a cold cache left the whole portal
+ * showing the neutral fallback for five minutes even though the ERP was fine.
+ * Short enough to recover quickly, long enough not to hammer a dead ERP.
+ */
+const NEGATIVE_TTL_MS = 30 * 1000;
 const FIXED_TIMEOUT_MS = 10_000;
 
 let companyCache: { at: number; name: string | null } | null = null;
@@ -34,8 +41,11 @@ function readRuntimeEnv(key: string): string | undefined {
 export const companyProfileServer = createServerFn({ method: "GET", strict: { output: false } })
   .validator(() => ({}) as Record<string, never>)
   .handler(async (): Promise<{ companyName: string | null }> => {
-    if (companyCache && Date.now() - companyCache.at < COMPANY_TTL_MS) {
-      return { companyName: companyCache.name };
+    if (companyCache) {
+      const ttl = companyCache.name ? COMPANY_TTL_MS : NEGATIVE_TTL_MS;
+      if (Date.now() - companyCache.at < ttl) {
+        return { companyName: companyCache.name };
+      }
     }
 
     const companyName = await resolveCompanyName();
