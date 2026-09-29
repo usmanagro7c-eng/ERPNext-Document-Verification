@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { FileCheck2, Image as ImageIcon, KeyRound, QrCode, ScanLine, Sparkles } from "lucide-react";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Header } from "@/components/Header";
 import { ManualHashForm } from "@/components/ManualHashForm";
 import { QRCodeScanner } from "@/components/QRCodeScanner";
@@ -8,6 +8,13 @@ import { ScanHistory } from "@/components/ScanHistory";
 import { Button } from "@/components/ui/button";
 import { useScanHistory } from "@/hooks/useScanHistory";
 import { extractVerificationHash } from "@/lib/verification-hash";
+
+/**
+ * How long the scanned hash stays visible in the manual entry field before the
+ * app navigates to the verification result. Long enough to read the captured
+ * code and the "verifying automatically" notice, short enough to feel instant.
+ */
+const AUTO_VERIFY_DELAY_MS = 1200;
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -29,13 +36,63 @@ function Home() {
   const [scanError, setScanError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"scan" | "manual">("scan");
   const [uploadLoading, setUploadLoading] = useState(false);
+  const [manualValue, setManualValue] = useState("");
+  const [pendingVerify, setPendingVerify] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const verifyTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { entries, clear } = useScanHistory();
+
+  const clearAutoVerify = useCallback(() => {
+    if (verifyTimer.current) {
+      clearTimeout(verifyTimer.current);
+      verifyTimer.current = null;
+    }
+    setPendingVerify(false);
+  }, []);
+
+  // A pending auto-verify must not fire after the user leaves this route.
+  useEffect(
+    () => () => {
+      if (verifyTimer.current) clearTimeout(verifyTimer.current);
+    },
+    [],
+  );
 
   const goToVerify = useCallback(
     (hash: string) => {
+      if (verifyTimer.current) {
+        clearTimeout(verifyTimer.current);
+        verifyTimer.current = null;
+      }
+      setPendingVerify(false);
       setScanning(false);
       void navigate({ to: "/verify/$hash", params: { hash } });
+    },
+    [navigate],
+  );
+
+  /**
+   * Camera scan and image upload both land here: the hash is dropped into the
+   * manual entry field so the user sees what was captured, then auto-verified.
+   */
+  const handleScanSuccess = useCallback(
+    (hash: string) => {
+      setScanning(false);
+      setScanError(null);
+      setActiveTab("manual");
+      setManualValue(hash);
+      setPendingVerify(true);
+
+      if (typeof navigator !== "undefined" && "vibrate" in navigator) {
+        navigator.vibrate?.(40);
+      }
+
+      if (verifyTimer.current) clearTimeout(verifyTimer.current);
+      verifyTimer.current = setTimeout(() => {
+        verifyTimer.current = null;
+        setPendingVerify(false);
+        void navigate({ to: "/verify/$hash", params: { hash } });
+      }, AUTO_VERIFY_DELAY_MS);
     },
     [navigate],
   );
@@ -58,7 +115,7 @@ function Home() {
       if (result?.data) {
         const hash = extractVerificationHash(result.data);
         if (hash) {
-          goToVerify(hash);
+          handleScanSuccess(hash);
           return;
         }
       }
@@ -103,6 +160,7 @@ function Home() {
                   onClick={() => {
                     setActiveTab("scan");
                     setScanError(null);
+                    clearAutoVerify();
                   }}
                   className={`flex flex-1 items-center justify-center gap-2 rounded-xl py-2.5 text-xs font-semibold transition-all ${
                     activeTab === "scan"
@@ -118,6 +176,7 @@ function Home() {
                   onClick={() => {
                     setActiveTab("manual");
                     setScanError(null);
+                    clearAutoVerify();
                   }}
                   className={`flex flex-1 items-center justify-center gap-2 rounded-xl py-2.5 text-xs font-semibold transition-all ${
                     activeTab === "manual"
@@ -185,7 +244,12 @@ function Home() {
                   </div>
                 ) : (
                   <div className="space-y-3">
-                    <ManualHashForm onSubmit={goToVerify} />
+                    <ManualHashForm
+                      value={manualValue}
+                      onValueChange={setManualValue}
+                      onSubmit={goToVerify}
+                      pendingVerify={pendingVerify}
+                    />
                   </div>
                 )}
               </div>
@@ -212,7 +276,7 @@ function Home() {
 
       {scanning && (
         <QRCodeScanner
-          onResult={goToVerify}
+          onResult={handleScanSuccess}
           onInvalid={handleInvalid}
           onCancel={() => setScanning(false)}
         />
