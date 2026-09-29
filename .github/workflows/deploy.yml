@@ -23,7 +23,7 @@ jobs:
         run: npm run build
 
       - name: Deploy to Cloudflare Workers
-        uses: wrangler-action@v3
+        uses: cloudflare/wrangler-action@v3
         with:
           command: deploy -c wrangler.jsonc
         env:
