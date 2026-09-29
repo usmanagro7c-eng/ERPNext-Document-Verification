@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useEffect, useRef } from "react";
 import { ErrorState } from "@/components/ErrorState";
 import { LoadingState } from "@/components/LoadingState";
+import { NotVerifiedState } from "@/components/NotVerifiedState";
 import { VerificationCard } from "@/components/VerificationCard";
 import { isLikelyHash } from "@/lib/verification-hash";
 import { recordScanHistory, type ScanStatus } from "@/lib/scan-history";
@@ -40,17 +41,24 @@ export function VerifyView({ hash }: { hash: string | undefined }) {
     recordScanHistory(hash, status);
   }, [hash, valid, query.isPending, query.isFetching, query.isError, query.error, query.data]);
 
-  if (!valid) return <ErrorState kind="invalid_hash" />;
+  if (!valid) return <NotVerifiedState kind="invalid_hash" hash={hash ?? ""} />;
   if (query.isPending || query.isFetching) return <LoadingState />;
 
   if (query.isError) {
     const kind: VerificationErrorKind =
       query.error instanceof VerificationError ? query.error.kind : "failed";
+    if (kind === "not_found" || kind === "invalid_hash") {
+      return (
+        <NotVerifiedState kind={kind} hash={hash ?? ""} onRetry={() => void query.refetch()} />
+      );
+    }
     return <ErrorState kind={kind} onRetry={() => void query.refetch()} />;
   }
 
   if (!query.data?.verified) {
-    return <ErrorState kind="not_found" onRetry={() => void query.refetch()} />;
+    return (
+      <NotVerifiedState kind="not_found" hash={hash ?? ""} onRetry={() => void query.refetch()} />
+    );
   }
 
   return <VerificationCard result={query.data} />;
