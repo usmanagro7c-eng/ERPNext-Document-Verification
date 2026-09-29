@@ -58,6 +58,8 @@
   --animate-sweep: sweep 2s ease-in-out infinite;
   --animate-pulse-subtle: pulse-subtle 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
   --animate-float: float 4s ease-in-out infinite;
+  --animate-fade-in: fade-in 0.25s ease-out both;
+  --animate-paste-pop: paste-pop 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 @keyframes rise {
@@ -116,6 +118,32 @@
   }
   50% {
     transform: translateY(-4px);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* One-shot: signals that a scanned hash just landed in the input. */
+@keyframes paste-pop {
+  0% {
+    opacity: 0.4;
+    transform: scale(0.985);
+    box-shadow: 0 0 0 0 oklch(0.55 0.15 254 / 0.45);
+  }
+  60% {
+    box-shadow: 0 0 0 6px oklch(0.55 0.15 254 / 0);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+    box-shadow: 0 0 0 0 oklch(0.55 0.15 254 / 0);
   }
 }
 
