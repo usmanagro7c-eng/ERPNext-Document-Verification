@@ -49,3 +49,36 @@ export function fieldLabel(key: string): string {
       .trim()
   );
 }
+
+/**
+ * Visitor-facing names for ERP doctypes.
+ *
+ * The ERP identifies its own document types, but the portal presents itself
+ * under the company's own name, so doctypes are renamed rather than shown raw.
+ * Anything not listed here still goes through `doctypeLabel`, which strips the
+ * words that would give the backing system away.
+ */
+export const DOCTYPE_LABELS: Record<string, string> = {
+  "Sales Invoice": "Invoice",
+  "Delivery Note": "Delivery Note",
+  "Sales Order": "Sales Order",
+  Quotation: "Quotation",
+  "Purchase Receipt": "Vendor Receipt",
+  "Purchase Order": "Vendor Order",
+};
+
+/** Words that identify the backing ERP and must never reach a visitor. */
+const ERP_FINGERPRINTS = /\b(erpnext|frappe|desk|doctype|erp)\b/gi;
+
+export function doctypeLabel(doctype: string | undefined): string {
+  const raw = (doctype ?? "").trim();
+  if (!raw) return "Document";
+  if (DOCTYPE_LABELS[raw]) return DOCTYPE_LABELS[raw];
+
+  const generic = raw
+    .replace(ERP_FINGERPRINTS, " ")
+    .replace(/[_-]+/g, " ")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+  return generic ? fieldLabel(generic.toLowerCase()) : "Document";
+}
