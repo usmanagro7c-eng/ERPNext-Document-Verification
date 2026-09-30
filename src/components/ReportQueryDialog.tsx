@@ -193,7 +193,7 @@ export function ReportQueryDialog({
         ) : (
           <form onSubmit={(e) => void handleSubmit(e)} noValidate className="min-w-0 space-y-4">
             {/* min-w-0 on this grid item lets the DialogContent column shrink
-                below its max-content width. Without it the 64-character hash in
+                below its max-content width. Without it the verification hash in
                 the footer row sizes the column and the dialog overflows on
                 every phone. */}
             <DialogHeader className="space-y-1.5">
@@ -332,7 +332,7 @@ export function ReportQueryDialog({
             <div className="flex items-center gap-2 rounded-xl border border-border/60 bg-muted/30 px-3 py-2 text-[11px] text-muted-foreground">
               <FileText className="size-3.5 shrink-0" />
               {/* min-w-0 is required for truncate inside a flex row: without it the
-                  flex item keeps its content width, and the 64-character hash
+                  flex item keeps its content width, and the verification hash
                   stretches the dialog past the viewport on phones. */}
               <span className="min-w-0 flex-1 truncate font-mono">
                 Code under review: {hash || "(none)"}

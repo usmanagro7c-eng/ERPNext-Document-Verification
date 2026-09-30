@@ -16,8 +16,9 @@ Browser ──► Cloudflare Worker (this app)
 ```
 
 1. The QR code encodes `https://<portal>/verify/<hash>` where `<hash>` is the
-   64-char HMAC-SHA-256 of `"{Doctype}.{document_name}"` — the same value that
-   is stored in the `verification_data` **Custom Field** on the document.
+   hex hash of `"{Doctype}.{document_name}"` — either the 32-char (truncated) or
+   the 64-char HMAC-SHA-256 digest, and it is the same value that is stored in
+   the `verification_data` **Custom Field** on the document.
 2. A TanStack Start **server function** running inside the Worker calls ERPNext
    with the built-in REST API, authenticated via a standard **API Key/Secret**
    of a restricted user (a core ERPNext feature — nothing is installed).
@@ -48,9 +49,15 @@ Hash + QR generator (runs anywhere, e.g. on your machine — never on ERPNext):
 import { createHmac } from "node:crypto";
 const secret = "CHANGE_ME"; // keep secret, used to generate hashes
 const doc = { doctype: "Sales Invoice", name: "ACC-SINV-2026-00042" };
+// 64-char HMAC-SHA-256 hex (full digest) …
 const hash = createHmac("sha256", secret).update(`${doc.doctype}.${doc.name}`).digest("hex");
-console.log(`https://<portal>/verify/${hash}`);
+// … or a 32-char code: keep the first 32 hex chars of the same digest.
+const shortHash = hash.slice(0, 32);
+console.log(`https://<portal>/verify/${shortHash}`);
 ```
+
+Both lengths are accepted by the portal (see `HASH_PATTERN` in
+`src/lib/verification-hash.ts`); pick one and use it consistently.
 
 Then encode that URL into a QR code (any QR tool / `qrcode` npm package) and
 store `hash` in the document's `verification_data` field.
