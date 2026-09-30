@@ -1,8 +1,12 @@
-/** Hash format accepted from QR codes / manual entry. */
-const HASH_PATTERN = /^[A-Za-z0-9_-]{6,128}$/;
+/**
+ * Hash format accepted from QR codes / manual entry, and shared with the
+ * server-side check so both ends agree on what a valid code is:
+ *   32 hex chars (MD5-length / truncated HMAC) or 64 hex chars (HMAC-SHA-256).
+ */
+const HASH_PATTERN = /^(?:[0-9a-f]{32}|[0-9a-f]{64})$/;
 
 export function isLikelyHash(value: string): boolean {
-  return HASH_PATTERN.test(value.trim());
+  return HASH_PATTERN.test(value.trim().toLowerCase());
 }
 
 /**

@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import type { DisplaySpec, VerificationErrorKind, VerifiedDocument } from "@/types/verification";
 import { parseDisplaySpec, resolveDisplaySpec } from "@/config/displaySpecs";
+import { isLikelyHash } from "@/lib/verification-hash";
 
 /**
  * Server-side proxy to ERPNext, exposed as a TanStack Start server function.
@@ -75,7 +76,7 @@ export const verifyDocumentServer = createServerFn({ method: "GET", strict: { ou
   .validator((d: { hash: string }) => d)
   .handler(async ({ data }): Promise<VerifyProxyResult> => {
     const hash = (data.hash ?? "").trim().toLowerCase();
-    if (!/^[0-9a-f]{64}$/.test(hash)) {
+    if (!isLikelyHash(hash)) {
       return { ok: false, kind: "invalid_hash", message: "Verification code is not valid." };
     }
 
