@@ -2,8 +2,20 @@ import { CheckCircle2, ShieldAlert, ShieldCheck } from "lucide-react";
 import { useCompanyName } from "@/components/CompanyProvider";
 import { cn } from "@/lib/utils";
 
-export function VerificationStatus({ verified }: { verified: boolean }) {
-  const { brand } = useCompanyName();
+export function VerificationStatus({
+  verified,
+  brand,
+}: {
+  verified: boolean;
+  /**
+   * Issuer to name. Passed by the card from the verification result, so the
+   * sentence is right on first paint; the context value is the fallback for
+   * callers that have no result, such as the not-verified notice.
+   */
+  brand?: string;
+}) {
+  const { brand: contextBrand } = useCompanyName();
+  const issuer = brand ?? contextBrand;
   return (
     <div
       className={cn(
@@ -67,8 +79,8 @@ export function VerificationStatus({ verified }: { verified: boolean }) {
 
           <p className="mx-auto mt-2 max-w-md text-xs sm:text-sm leading-relaxed text-muted-foreground">
             {verified
-              ? `This document's cryptographic signature perfectly matches the official ${brand} record. No tampering has been detected.`
-              : `This document could not be matched against official ${brand} records. Please double-check the QR code or link.`}
+              ? `This document's cryptographic signature perfectly matches the official ${issuer} record. No tampering has been detected.`
+              : `This document could not be matched against official ${issuer} records. Please double-check the QR code or link.`}
           </p>
         </div>
       </div>

@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useRef } from "react";
+import { useCompanyName } from "@/components/CompanyProvider";
 import { ErrorState } from "@/components/ErrorState";
 import { LoadingState } from "@/components/LoadingState";
 import { NotVerifiedState } from "@/components/NotVerifiedState";
@@ -12,6 +13,7 @@ import type { VerificationErrorKind } from "@/types/verification";
 export function VerifyView({ hash }: { hash: string | undefined }) {
   const valid = Boolean(hash && isLikelyHash(hash));
   const recordedHashRef = useRef<string | null>(null);
+  const { setCompanyName } = useCompanyName();
 
   const query = useQuery({
     queryKey: ["verify", hash],
@@ -20,6 +22,16 @@ export function VerifyView({ hash }: { hash: string | undefined }) {
     retry: false,
     staleTime: 5 * 60_000,
   });
+
+  // Branding follows the document: the result names the company that issued it,
+  // which is not necessarily the first configured site. Cleared on unmount so
+  // that going back to the portal does not leave it branded with the issuer of
+  // the last document that happened to be scanned.
+  const brandName = query.data?.brandName ?? null;
+  useEffect(() => {
+    setCompanyName(brandName);
+  }, [brandName, setCompanyName]);
+  useEffect(() => () => setCompanyName(null), [setCompanyName]);
 
   useEffect(() => {
     if (!valid || !hash || query.isPending || query.isFetching) return;

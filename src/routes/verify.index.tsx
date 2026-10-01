@@ -28,7 +28,9 @@ export const Route = createFileRoute("/verify/")({
 
 function VerifyByQuery() {
   const { hash } = Route.useSearch();
-  const { brand } = useCompanyName();
+  // Neutral until a document names its issuer: naming a company here would
+  // read as "verified by <company>" even on a result that matched nothing.
+  const { companyName } = useCompanyName();
   return (
     <div className="page-bg min-h-screen bg-background flex flex-col justify-between">
       <div>
@@ -55,7 +57,11 @@ function VerifyByQuery() {
 
       <footer className="border-t border-border/60 bg-card/40 py-4 text-center text-xs text-muted-foreground">
         <div className="mx-auto flex max-w-3xl items-center justify-between px-4 text-[11px]">
-          <span>Official {brand} Verification Service</span>
+          <span>
+            {companyName
+              ? `Official ${companyName} Verification Service`
+              : "Official Document Verification Service"}
+          </span>
           <Link to="/" className="inline-flex items-center gap-1 hover:text-foreground">
             <Home className="size-3" />
             <span>Home</span>

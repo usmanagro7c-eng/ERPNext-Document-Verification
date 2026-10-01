@@ -6,6 +6,10 @@
 export interface VerifiedDocument {
   doctype: string;
   name: string;
+  /** Id of the ERPNext site this document was found on. Set by the server. */
+  siteId?: string;
+  /** Company that issued it, resolved from that site. Null when unresolvable. */
+  sourceName?: string | null;
   /** Any additional safe fields the backend chooses to return. */
   [key: string]: unknown;
 }
@@ -24,6 +28,8 @@ export interface VerificationResponse {
   document?: VerifiedDocument;
   /** Present when the hash resolves to more than one registered document. */
   documents?: VerifiedDocument[];
+  /** Company that issued the document, for branding. */
+  brandName?: string | null;
   error?: string;
   message?: string;
 }
@@ -35,6 +41,14 @@ export interface VerificationResult {
   documents?: VerifiedDocument[];
   /** Display specs used to slice the returned documents, keyed by doctype. */
   displayByDoctype?: Record<string, DisplaySpec>;
+  /**
+   * Company that issued the document. The portal verifies documents from more
+   * than one site, so the issuer is only known once a site has answered — until
+   * then the UI stays brand-neutral rather than naming the first configured site.
+   */
+  brandName?: string | null;
+  /** Ids of every site that returned a match, in configuration order. */
+  matchedSites?: string[];
   hash: string;
   verifiedAt: string;
   message?: string;

@@ -29,6 +29,8 @@ export async function verifyDocument(hash: string): Promise<VerificationResult> 
     ...(result.document ? { document: result.document } : {}),
     ...(result.documents ? { documents: result.documents } : {}),
     ...(result.displayByDoctype ? { displayByDoctype: result.displayByDoctype } : {}),
+    ...(result.brandName !== undefined ? { brandName: result.brandName } : {}),
+    ...(result.matchedSites ? { matchedSites: result.matchedSites } : {}),
     hash: trimmed,
     verifiedAt: new Date().toISOString(),
     ...(result.message ? { message: result.message } : {}),

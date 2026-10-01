@@ -5,6 +5,7 @@ import {
   firstInvalidField,
   reportQuerySchema,
 } from "@/lib/report-schema";
+import { defaultSite } from "@/services/erpSites";
 import type { ReportQueryInput, ReportQueryResult } from "@/types/report";
 
 /**
@@ -16,6 +17,11 @@ import type { ReportQueryInput, ReportQueryResult } from "@/types/report";
  * Two steps against ERPNext:
  *   1. POST /api/resource/Lead   — creates the CRM record.
  *   2. POST /api/method/upload_file — attaches the file to that Lead.
+ *
+ * The portal verifies against several sites, but a query has nowhere obvious to
+ * go: the visitor may not know which issuer a rejected code came from. Leads
+ * therefore go to the first configured site, and the site's id is written into
+ * the remarks so the team can reroute by hand if the guess was wrong.
  *
  * Fields deliberately NOT sent, and why:
  *   - company_name: lead.py does `elif self.company_name: self.lead_name =
@@ -76,15 +82,14 @@ export const reportQueryServer = createServerFn({ method: "POST", strict: { outp
       }
     }
 
-    // 5. Runtime configuration.
-    const baseUrl = readRuntimeEnv("ERP_NEXT_BASE_URL") ?? "";
-    const apiKey = readRuntimeEnv("ERP_NEXT_API_KEY");
-    const apiSecret = readRuntimeEnv("ERP_NEXT_API_SECRET");
-    if (!baseUrl || !apiKey || !apiSecret) {
-      console.error("[report] ERP credentials or base URL are not configured");
+    // 5. Runtime configuration. Reports always go to the default site.
+    const site = defaultSite();
+    if (!site) {
+      console.error("[report] no ERPNext site is configured");
       return { ok: false, message: "Query reporting is not configured. Please try again later." };
     }
-    const auth = `token ${apiKey}:${apiSecret}`;
+    const baseUrl = site.baseUrl;
+    const auth = `token ${site.apiKey}:${site.apiSecret}`;
 
     // 6. Create the Lead.
     const leadPayload = {
@@ -97,6 +102,7 @@ export const reportQueryServer = createServerFn({ method: "POST", strict: { outp
         reason: input.reason,
         pageUrl: input.pageUrl,
         attachmentName: input.attachment?.fileName,
+        siteId: site.id,
       }),
     };
 
@@ -179,26 +185,21 @@ interface RemarksInput {
   reason: string;
   pageUrl?: string | undefined;
   attachmentName?: string | undefined;
+  siteId: string;
 }
 
-function buildRemarks({ hash, reason, pageUrl, attachmentName }: RemarksInput): string {
+function buildRemarks({ hash, reason, pageUrl, attachmentName, siteId }: RemarksInput): string {
   const lines = [
     "Document verification query",
     "",
     `Code: ${hash || "(none supplied)"}`,
     `Reason: ${reason || "unspecified"}`,
+    `Site: ${siteId}`,
     `At: ${new Date().toISOString()}`,
   ];
   if (pageUrl) lines.push(`Page: ${pageUrl}`);
   if (attachmentName) lines.push(`Attachment: ${attachmentName}`);
   return lines.join("\n");
-}
-
-function readRuntimeEnv(key: string): string | undefined {
-  const maybeProcess = globalThis as {
-    process?: { env?: Record<string, string | undefined> };
-  };
-  return maybeProcess.process?.env?.[key];
 }
 
 function fetchWithTimeout(url: URL, init: RequestInit): Promise<Response> {

@@ -34,7 +34,10 @@ function childTables(document: VerifiedDocument, spec?: DisplaySpec) {
 }
 
 export function VerificationCard({ result }: { result: VerificationResult }) {
-  const { brand } = useCompanyName();
+  const { brand: contextBrand } = useCompanyName();
+  // The issuer comes from the result, not from whichever site is configured
+  // first: with several sites, only the site that answered knows who issued it.
+  const brand = result.brandName ?? contextBrand;
   const displayByDoctype = result.displayByDoctype ?? {};
 
   const documents = result.documents?.length
@@ -53,7 +56,7 @@ export function VerificationCard({ result }: { result: VerificationResult }) {
   return (
     <div className="animate-rise space-y-5">
       {/* Status banner */}
-      <VerificationStatus verified={result.verified} />
+      <VerificationStatus verified={result.verified} brand={brand} />
 
       {/* Document summary overview ribbon (if verified single doc) */}
       {result.verified && primaryDoc && (
@@ -108,13 +111,22 @@ export function VerificationCard({ result }: { result: VerificationResult }) {
             <div className="space-y-6">
               {documents.map((doc, idx) => (
                 <div
-                  key={doc.name ?? JSON.stringify(doc)}
+                  // Two sites can use the same naming series, so the document
+                  // name alone is not unique across the result set.
+                  key={`${doc.siteId ?? "?"}:${doc.name ?? JSON.stringify(doc)}`}
                   className="rounded-2xl border border-border/70 bg-muted/20 p-5 shadow-xs"
                 >
                   <div className="mb-4 flex items-center justify-between border-b border-border/60 pb-3">
-                    <span className="rounded-lg bg-primary/10 px-2.5 py-1 text-xs font-bold text-primary uppercase">
-                      {doctypeLabel(doc.doctype)} #{idx + 1}
-                    </span>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="rounded-lg bg-primary/10 px-2.5 py-1 text-xs font-bold text-primary uppercase">
+                        {doctypeLabel(doc.doctype)} #{idx + 1}
+                      </span>
+                      {doc.sourceName && (
+                        <span className="rounded-lg border border-border/70 bg-card px-2.5 py-1 text-xs font-semibold text-muted-foreground">
+                          {doc.sourceName}
+                        </span>
+                      )}
+                    </div>
                     <span className="font-mono text-xs font-bold text-foreground">
                       {doc.name ?? "—"}
                     </span>

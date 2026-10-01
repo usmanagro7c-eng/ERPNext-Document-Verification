@@ -14,6 +14,11 @@ export const HIDDEN_FIELDS = new Set([
   "password",
   "token",
   "owner_email",
+  // Server-added routing keys. The issuer is rendered deliberately (a "source"
+  // chip on a multi-record result), never as a details-table row, and the site
+  // id is infrastructure that no visitor should read.
+  "siteId",
+  "sourceName",
 ]);
 
 export const FIELD_LABELS: Record<string, string> = {

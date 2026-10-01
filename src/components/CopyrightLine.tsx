@@ -3,11 +3,11 @@ import { useCompanyName } from "@/components/CompanyProvider";
 /**
  * Copyright line for the site footers.
  *
- * The holder is the company the portal is operated for, read from the ERP's
- * Global Defaults, so renaming the company updates this without a redeploy.
- * It deliberately does not use `brand`: that falls back to the phrase "the
- * issuing organisation", which reads wrongly in a copyright notice because a
- * copyright belongs to a legal entity.
+ * The holder is the company a verified document was issued by, read from the
+ * ERP through the verification result, so renaming the company updates this
+ * without a redeploy. It deliberately does not use `brand`: that falls back to
+ * the phrase "the issuing organisation", which reads wrongly in a copyright
+ * notice because a copyright belongs to a legal entity.
  *
  * The year is rendered rather than baked in, so the line never goes stale.
  * `&copy;` is used instead of a literal © because this codebase already has
