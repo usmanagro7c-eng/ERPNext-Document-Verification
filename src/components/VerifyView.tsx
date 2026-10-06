@@ -7,7 +7,6 @@ import { NotVerifiedState } from "@/components/NotVerifiedState";
 import { RatingDialog } from "@/components/RatingDialog";
 import { VerificationCard } from "@/components/VerificationCard";
 import { isLikelyHash } from "@/lib/verification-hash";
-import { readRating } from "@/lib/rating";
 import { recordScanHistory, type ScanStatus } from "@/lib/scan-history";
 import { VerificationError, verifyDocument } from "@/services/verificationService";
 import type { VerificationErrorKind } from "@/types/verification";
@@ -56,13 +55,13 @@ export function VerifyView({ hash }: { hash: string | undefined }) {
     recordScanHistory(hash, status);
   }, [hash, valid, query.isPending, query.isFetching, query.isError, query.error, query.data]);
 
-  // Ask for feedback once the result has settled in — but at most once per
-  // document, tracked in localStorage so a re-scan never nags again.
+  // Ask for feedback once the result has settled in. Shows on every
+  // verification, even of a document rated before — the stored record is
+  // simply overwritten, so re-scans keep working when a backend is attached.
   const verified = Boolean(query.data?.verified);
   useEffect(() => {
     if (!verified || !hash) return;
-    if (readRating(hash)) return;
-    const timer = setTimeout(() => setRatingOpen(true), 1500);
+    const timer = setTimeout(() => setRatingOpen(true), 1000);
     return () => clearTimeout(timer);
   }, [verified, hash]);
 
