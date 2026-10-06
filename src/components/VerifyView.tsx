@@ -1,11 +1,13 @@
 import { useQuery } from "@tanstack/react-query";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useCompanyName } from "@/components/CompanyProvider";
 import { ErrorState } from "@/components/ErrorState";
 import { LoadingState } from "@/components/LoadingState";
 import { NotVerifiedState } from "@/components/NotVerifiedState";
+import { RatingDialog } from "@/components/RatingDialog";
 import { VerificationCard } from "@/components/VerificationCard";
 import { isLikelyHash } from "@/lib/verification-hash";
+import { readRating } from "@/lib/rating";
 import { recordScanHistory, type ScanStatus } from "@/lib/scan-history";
 import { VerificationError, verifyDocument } from "@/services/verificationService";
 import type { VerificationErrorKind } from "@/types/verification";
@@ -14,6 +16,7 @@ export function VerifyView({ hash }: { hash: string | undefined }) {
   const valid = Boolean(hash && isLikelyHash(hash));
   const recordedHashRef = useRef<string | null>(null);
   const { setCompanyName } = useCompanyName();
+  const [ratingOpen, setRatingOpen] = useState(false);
 
   const query = useQuery({
     queryKey: ["verify", hash],
@@ -53,6 +56,16 @@ export function VerifyView({ hash }: { hash: string | undefined }) {
     recordScanHistory(hash, status);
   }, [hash, valid, query.isPending, query.isFetching, query.isError, query.error, query.data]);
 
+  // Ask for feedback once the result has settled in — but at most once per
+  // document, tracked in localStorage so a re-scan never nags again.
+  const verified = Boolean(query.data?.verified);
+  useEffect(() => {
+    if (!verified || !hash) return;
+    if (readRating(hash)) return;
+    const timer = setTimeout(() => setRatingOpen(true), 1500);
+    return () => clearTimeout(timer);
+  }, [verified, hash]);
+
   if (!valid) return <NotVerifiedState kind="invalid_hash" hash={hash ?? ""} />;
   if (query.isPending || query.isFetching) return <LoadingState />;
 
@@ -73,5 +86,10 @@ export function VerifyView({ hash }: { hash: string | undefined }) {
     );
   }
 
-  return <VerificationCard result={query.data} />;
+  return (
+    <>
+      <VerificationCard result={query.data} />
+      <RatingDialog open={ratingOpen} onOpenChange={setRatingOpen} hash={hash ?? ""} />
+    </>
+  );
 }
