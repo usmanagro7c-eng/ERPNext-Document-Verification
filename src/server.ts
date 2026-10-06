@@ -44,11 +44,46 @@ function isH3SwallowedErrorBody(body: string): boolean {
   }
 }
 
+// The build emits /verification/-prefixed asset URLs (see vite.config.ts). On
+// staging the proxy strips that prefix before the Worker sees the request, but
+// on workers.dev / local dev the prefixed URLs arrive as-is: the assets router
+// finds nothing under /verification/ and falls through to this Worker. Strip
+// the prefix here and dispatch the unprefixed path — static files from the
+// ASSETS binding, everything else through the SSR handler — so one build
+// serves both mounts.
+const SUB_PATH_PREFIX = "/verification";
+
+function stripPrefix(request: Request): Request {
+  const url = new URL(request.url);
+  if (url.pathname !== SUB_PATH_PREFIX && !url.pathname.startsWith(`${SUB_PATH_PREFIX}/`)) {
+    return request;
+  }
+  url.pathname =
+    url.pathname === SUB_PATH_PREFIX ? "/" : url.pathname.slice(SUB_PATH_PREFIX.length);
+  return new Request(url, request);
+}
+
+type CfEnv = { ASSETS?: { fetch: typeof fetch } };
+
+// nitro's cloudflare entry stores the bindings on globalThis.__env__ and calls
+// this SSR service as fetch(req) only, so the env argument is undefined here.
+function getBindings(env: unknown): CfEnv {
+  return ((env as CfEnv | undefined) ?? (globalThis as { __env__?: CfEnv }).__env__ ?? {}) as CfEnv;
+}
+
 export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
     try {
+      const stripped = stripPrefix(request);
+      if (stripped !== request) {
+        const assets = getBindings(env).ASSETS;
+        if (assets) {
+          const assetResponse = await assets.fetch(stripped);
+          if (assetResponse.status !== 404) return assetResponse;
+        }
+      }
       const handler = await getServerEntry();
-      const response = await handler.fetch(request, env, ctx);
+      const response = await handler.fetch(stripped, env, ctx);
       return await normalizeCatastrophicSsrResponse(response);
     } catch (error) {
       console.error(error);

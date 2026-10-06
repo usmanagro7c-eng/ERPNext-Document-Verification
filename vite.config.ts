@@ -12,7 +12,9 @@ export default defineConfig({
     // `?url` imports, CSS, the client entry, and Vite's own preload helper —
     // must carry the prefix. The proxy only rewrites href/src inside the HTML
     // it returns, so anything the bundle generates at runtime would otherwise
-    // 404 against the ERPNext site at the domain root.
+    // 404 against the ERPNext site at the domain root. Direct root hosting
+    // (workers.dev, local dev) still works: src/server.ts strips the prefix
+    // from incoming /verification/* requests before dispatching.
     base: "/verification/",
   },
   tanstackStart: {

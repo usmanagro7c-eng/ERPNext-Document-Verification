@@ -22,8 +22,29 @@
  * `start.ts` prefixes server-function requests.
  */
 
-/** Sub-path the app is mounted under. Must match the proxy's prefix exactly. */
-export const SUB_PATH = "/verification";
+/**
+ * Sub-path the app is mounted under. Resolution order:
+ *   1. VITE_SUB_PATH at build time (forced proxy build), else
+ *   2. the browser's own location — the same build is served both at the
+ *      workers.dev root and behind the staging.mmmc.pk reverse proxy under
+ *      /verification, so the client adopts whichever prefix it was loaded
+ *      from. SSR always renders unprefixed; the proxy rewrites HTML hrefs.
+ */
+const KNOWN_SUB_PATHS = ["/verification"];
+
+function detectSubPath(): string {
+  const fromEnv = (import.meta.env.VITE_SUB_PATH ?? "").replace(/\/+$/, "");
+  if (fromEnv) return fromEnv;
+  if (typeof window !== "undefined") {
+    const path = window.location.pathname;
+    for (const prefix of KNOWN_SUB_PATHS) {
+      if (path === prefix || path.startsWith(`${prefix}/`)) return prefix;
+    }
+  }
+  return "";
+}
+
+export const SUB_PATH = detectSubPath();
 
 /**
  * Browser URL -> router path. `/verification` -> `/`, and
@@ -31,6 +52,7 @@ export const SUB_PATH = "/verification";
  * sub-path is left alone, which is what the server always sees.
  */
 export function stripSubPath({ url }: { url: URL }) {
+  if (!SUB_PATH) return url;
   if (url.pathname === SUB_PATH) {
     url.pathname = "/";
   } else if (url.pathname.startsWith(`${SUB_PATH}/`)) {
@@ -45,6 +67,7 @@ export function stripSubPath({ url }: { url: URL }) {
  * Idempotent: an already-prefixed path is returned untouched.
  */
 export function addSubPath({ url }: { url: URL }) {
+  if (!SUB_PATH) return url;
   if (url.pathname !== SUB_PATH && !url.pathname.startsWith(`${SUB_PATH}/`)) {
     url.pathname = `${SUB_PATH}${url.pathname}`;
   }
