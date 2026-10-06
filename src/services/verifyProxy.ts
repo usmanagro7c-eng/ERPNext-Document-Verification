@@ -268,7 +268,7 @@ function mergeDisplaySpecs(outcomes: SiteOutcome[]): Record<string, DisplaySpec>
 /* ERPNext built-in REST API helpers                                   */
 /* ------------------------------------------------------------------ */
 
-function authHeader({ apiKey, apiSecret }: ErpSite): string {
+export function authHeader({ apiKey, apiSecret }: ErpSite): string {
   return `token ${apiKey}:${apiSecret}`;
 }
 
@@ -378,7 +378,7 @@ function sliceDocument(doc: VerifiedDocument, spec: DisplaySpec): VerifiedDocume
   return picked;
 }
 
-async function findDocumentByHash(
+export async function findDocumentByHash(
   site: ErpSite,
   auth: string,
   doctype: string,

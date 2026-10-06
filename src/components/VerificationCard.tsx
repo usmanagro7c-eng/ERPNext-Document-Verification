@@ -1,10 +1,13 @@
 import { Link } from "@tanstack/react-router";
-import { FileCheck, Files, RotateCcw } from "lucide-react";
+import { FileCheck, Files, RotateCcw, ShieldQuestion } from "lucide-react";
+import { useState } from "react";
 import { useCompanyName } from "@/components/CompanyProvider";
 import { ChildTable } from "@/components/ChildTable";
+import { CreateQueryDialog } from "@/components/CreateQueryDialog";
 import { DocumentField } from "@/components/DocumentField";
 import { VerificationStatus } from "@/components/VerificationStatus";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { doctypeLabel, HIDDEN_FIELDS } from "@/config/verification";
 import type { DisplaySpec, VerificationResult, VerifiedDocument } from "@/types/verification";
 
@@ -35,6 +38,7 @@ function childTables(document: VerifiedDocument, spec?: DisplaySpec) {
 
 export function VerificationCard({ result }: { result: VerificationResult }) {
   const { brand: contextBrand } = useCompanyName();
+  const [queryOpen, setQueryOpen] = useState(false);
   // The issuer comes from the result, not from whichever site is configured
   // first: with several sites, only the site that answered knows who issued it.
   const brand = result.brandName ?? contextBrand;
@@ -168,6 +172,20 @@ export function VerificationCard({ result }: { result: VerificationResult }) {
         </div>
       </div>
 
+      {/* Raise a query with the issuing team about the verified document */}
+      {result.verified && primaryDoc && (
+        <div className="flex justify-center">
+          <Button
+            variant="outline"
+            onClick={() => setQueryOpen(true)}
+            className="h-11 gap-2 rounded-xl px-5 text-sm font-semibold shadow-xs"
+          >
+            <ShieldQuestion className="size-4" />
+            Raise a Query
+          </Button>
+        </div>
+      )}
+
       {/* Quick link back */}
       <div className="text-center pt-2">
         <Link
@@ -178,6 +196,15 @@ export function VerificationCard({ result }: { result: VerificationResult }) {
           <span>Verify another document</span>
         </Link>
       </div>
+
+      {primaryDoc && (
+        <CreateQueryDialog
+          open={queryOpen}
+          onOpenChange={setQueryOpen}
+          hash={result.hash}
+          document={primaryDoc}
+        />
+      )}
     </div>
   );
 }
