@@ -33,7 +33,7 @@
 const KNOWN_SUB_PATHS = ["/verification"];
 
 function detectSubPath(): string {
-  const fromEnv = (import.meta.env.VITE_SUB_PATH ?? "").replace(/\/+$/, "");
+  const fromEnv = (import.meta.env["VITE_SUB_PATH"] ?? "").replace(/\/+$/, "");
   if (fromEnv) return fromEnv;
   if (typeof window !== "undefined") {
     const path = window.location.pathname;
