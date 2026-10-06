@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowLeft, Home, ShieldCheck } from "lucide-react";
+import { ArrowLeft, ShieldCheck } from "lucide-react";
 import { useCompanyName } from "@/components/CompanyProvider";
 import { CopyrightLine } from "@/components/CopyrightLine";
 import { Header } from "@/components/Header";
@@ -65,16 +65,12 @@ function VerifyShell({ children }: { children: React.ReactNode }) {
       </div>
 
       <footer className="border-t border-border/60 bg-card/40 py-4 text-center text-xs text-muted-foreground">
-        <div className="mx-auto flex max-w-3xl items-center justify-between px-4 text-[11px]">
+        <div className="mx-auto max-w-3xl px-4 text-[11px]">
           <span>
             {companyName
               ? `Official ${companyName} Verification Service`
               : "Official Document Verification Service"}
           </span>
-          <Link to="/" className="inline-flex items-center gap-1 hover:text-foreground">
-            <Home className="size-3" />
-            <span>Home</span>
-          </Link>
         </div>
         <CopyrightLine />
       </footer>

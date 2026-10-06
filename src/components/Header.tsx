@@ -1,5 +1,6 @@
 import { Link } from "@tanstack/react-router";
-import { Moon, ShieldCheck, Sun } from "lucide-react";
+import { Home, Moon, ShieldCheck, Sun } from "lucide-react";
+import { useEffect, useState } from "react";
 import { useTheme } from "@/hooks/useTheme";
 import { Button } from "@/components/ui/button";
 import { useCompanyName } from "@/components/CompanyProvider";
@@ -7,12 +8,26 @@ import { useCompanyName } from "@/components/CompanyProvider";
 export function Header() {
   const { theme, toggleTheme } = useTheme();
   const { companyName } = useCompanyName();
+  const [siteHomeUrl, setSiteHomeUrl] = useState("/");
+
+  useEffect(() => {
+    if (typeof window !== "undefined" && window.location?.origin) {
+      setSiteHomeUrl(`${window.location.origin}/`);
+    }
+  }, []);
+
+  const handleHomeClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    if (typeof window !== "undefined" && window.location?.origin) {
+      e.preventDefault();
+      window.location.href = `${window.location.origin}/`;
+    }
+  };
 
   return (
     <header className="sticky top-0 z-40 w-full border-b border-border/60 bg-card/85 backdrop-blur-md transition-colors">
       <div className="mx-auto flex max-w-4xl items-center justify-between px-4 py-3 sm:px-6">
         <Link to="/" className="group flex items-center gap-3 transition-opacity hover:opacity-90">
-          <div className="relative flex size-10 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-primary/80 shadow-md shadow-primary/20 transition-transform group-hover:scale-105">
+          <div className="relative flex size-10 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-primary/80 shadow-md shadow-primary/20 transition-transform group-hover:scale-105 shrink-0">
             <ShieldCheck className="size-5 text-primary-foreground" />
             <span className="absolute -bottom-0.5 -right-0.5 flex size-2.5">
               <span className="absolute inline-flex size-full animate-ping rounded-full bg-success opacity-75" />
@@ -20,24 +35,38 @@ export function Header() {
             </span>
           </div>
 
-          <div className="leading-snug">
+          <div className="leading-snug min-w-0">
             <div className="flex items-center gap-2">
-              <p className="text-sm font-bold tracking-tight text-foreground sm:text-[15px]">
+              <p className="truncate text-sm font-bold tracking-tight text-foreground sm:text-[15px]">
                 {companyName ? `${companyName} Verification` : "Document Verification"}
               </p>
               <span className="hidden rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary sm:inline-block">
                 Portal
               </span>
             </div>
-            <p className="text-[11px] text-muted-foreground">Official Document Authenticator</p>
+            <p className="truncate text-[11px] text-muted-foreground">
+              Official Document Authenticator
+            </p>
           </div>
         </Link>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
           <div className="hidden items-center gap-1.5 rounded-full border border-border/60 bg-muted/40 px-2.5 py-1 text-[11px] font-medium text-muted-foreground sm:flex">
             <span className="size-1.5 rounded-full bg-success animate-pulse" />
             <span>Secure 256-bit Gate</span>
           </div>
+
+          <Button
+            asChild
+            variant="ghost"
+            size="sm"
+            className="h-9 gap-1.5 rounded-xl px-2.5 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground sm:px-3"
+          >
+            <a href={siteHomeUrl} onClick={handleHomeClick} aria-label="Website Home">
+              <Home className="size-4" />
+              <span>Home</span>
+            </a>
+          </Button>
 
           <Button
             variant="ghost"
