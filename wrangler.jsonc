@@ -14,7 +14,7 @@
     // Sites are searched in this order and in parallel. The first one receives
     // Report Query leads. Adding a site is one entry here plus a secret pair
     // (ERP_NEXT_API_KEY_<ID> / ERP_NEXT_API_SECRET_<ID>) — no code change.
-    "ERP_NEXT_SITES": "[{\"id\":\"dev16\",\"baseUrl\":\"https://dev16.mmmc.pk\"},{\"id\":\"test16\",\"baseUrl\":\"https://test16.mmmc.pk\"}]",
+    "ERP_NEXT_SITES": "[{\"id\":\"dev16\",\"baseUrl\":\"https://dev16.mmmc.pk\"},{\"id\":\"test16\",\"baseUrl\":\"https://test16.mmmc.pk\"},{\"id\":\"staging\",\"baseUrl\":\"https://staging.mmmc.pk\"}]",
     "VERIFICATION_DOCTYPES": "",
   },
   "rules": [
