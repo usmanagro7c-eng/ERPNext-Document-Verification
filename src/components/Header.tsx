@@ -38,7 +38,7 @@ export function Header() {
           <div className="leading-snug min-w-0">
             <div className="flex items-center gap-2">
               <p className="truncate text-sm font-bold tracking-tight text-foreground sm:text-[15px]">
-                {companyName ? `${companyName} Verification` : "Document Verification"}
+                {companyName ? `${companyName}` : "Document Verification"}
               </p>
               <span className="hidden rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary sm:inline-block">
                 Portal
