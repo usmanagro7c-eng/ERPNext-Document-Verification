@@ -226,6 +226,9 @@ async function verifyOnSite(site: ErpSite, code: VerificationCode): Promise<Site
       return outcome;
     }
     if (doc) {
+      // Skip cancelled documents — they are not valid for verification.
+      if (isCancelled(doc)) continue;
+
       // The site is attached after slicing, so it can only ever be a value this
       // module wrote — an ERP field of the same name cannot ride along.
       outcome.matches.push({ ...sliceDocument(doc, spec), siteId: site.id });
@@ -233,6 +236,19 @@ async function verifyOnSite(site: ErpSite, code: VerificationCode): Promise<Site
   }
 
   return outcome;
+}
+
+function isCancelled(doc: Record<string, unknown>): boolean {
+  // Frappe docstatus: 0=Draft, 1=Submitted, 2=Cancelled
+  const ds = doc["docstatus"];
+  if (typeof ds === "number" && ds === 2) return true;
+  if (typeof ds === "string" && ds === "2") return true;
+
+  // status field can be "Cancelled", "Canceled", "cancelled", etc.
+  const st = doc["status"];
+  if (typeof st === "string" && /cancel(l?ed)?/i.test(st)) return true;
+
+  return false;
 }
 
 function problemFor(error: unknown): SiteProblem {
