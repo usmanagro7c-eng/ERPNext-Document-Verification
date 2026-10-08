@@ -42,8 +42,9 @@ Browser ──► Cloudflare Worker (this app)
    `VERIFICATION_DOCTYPES`.
 3. **Generate an API Key/Secret** for that user (ERPNext → User → API Access).
    These are secrets; they live only as Worker bindings, never in the repo.
-4. **Fill `verification_data`** on each document with the HMAC hash and print a
-   QR code for `https://<portal>/verify/<hash>`.
+4. **Fill `verification_data`** on each document with the verification code and
+   print a QR code for `https://<portal>/verify/<code>`. The printed code is
+   `<PREFIX>-<hash>` — see [Prefixed codes](#prefixed-codes-the-printed-format).
 
 Hash + QR generator (runs anywhere, e.g. on your machine — never on ERPNext):
 
@@ -59,13 +60,69 @@ const shortHash = hash.slice(0, 32);
 console.log(`https://<portal>/verify/${shortHash}`);
 ```
 
-Both lengths are accepted by the portal (see `HASH_PATTERN` in
+Both lengths are accepted by the portal (see `CODE_PATTERN` in
 `src/lib/verification-hash.ts`). Pick one per site and use it consistently —
 different sites may legitimately use different lengths, since each has its own
 hash secret.
 
-Then encode that URL into a QR code (any QR tool / `qrcode` npm package) and
-store `hash` in the document's `verification_data` field.
+### Prefixed codes (the printed format)
+
+The printed QR carries a **doctype prefix** in front of the hash:
+
+```
+SIN-e006e6dc77ec0ca6ecaefd28b34982fe
+^^^ prefix            ^^^^^^^^^^^^^^^^ hash
+```
+
+Store the **whole string** in `verification_data`, prefix included — that is
+what ERPNext is filtered against, so a bare hash will not match a prefixed
+record. Prefixes are defined in `src/config/doctypePrefixes.ts`:
+
+| Doctype            | Prefix | Doctype           | Prefix |
+| ------------------ | ------ | ----------------- | ------ |
+| Sales Invoice      | `SIN`  | Purchase Order    | `PO`   |
+| Sales Order        | `SO`   | Purchase Receipt  | `PR`   |
+| Delivery Note      | `DN`   | Purchase Invoice  | `PIN`  |
+|                    |        | Stock Entry       | `SE`   |
+
+The prefix buys two things:
+
+- **Routing.** A prefixed code names its own doctype, so only that one is
+  searched instead of every doctype on every site. That is what keeps a scan
+  inside the Worker's subrequest budget (see below).
+- **Issue filing.** A query raised on a verified document is filed as
+  `priority = High` under an `Issue Type` named after the doctype — `SIN` files
+  under *Sales Invoice*.
+
+Case is normalised for you: the portal upper-cases the prefix and lower-cases
+the hash, so `sin-E006…` and `SIN-e006…` both resolve to the one string ERPNext
+holds.
+
+Legacy records with no prefix still verify and still get an Issue Type — the
+prefix is skipped and the **verified document's own doctype** is used instead. An
+unknown prefix (a doctype added in ERPNext but not to the table above) falls back
+to searching all doctypes, so a new doctype never breaks a scan.
+
+Then encode `https://<portal>/verify/<PREFIX>-<hash>` into a QR code (any QR
+tool / `qrcode` npm package) and store that same `<PREFIX>-<hash>` string in the
+document's `verification_data` field. The QR and the field must agree exactly —
+that is the string the portal looks up.
+
+### Raise a Query → ERPNext Issue
+
+A query on a verified document becomes an Issue on the **issuing** site, filed
+`High` priority under an Issue Type named after the doctype. Both fields are
+Links, so the portal creates the lookup record the first time it needs one
+(`Issue Type`, `Issue Priority`) and reuses it afterwards.
+
+ERPNext prerequisites for the API user, beyond the read permissions above:
+
+- **create** on `Issue` (Support module)
+- **read + create** on `Issue Type` and `Issue Priority`
+
+If a lookup record cannot be created, the Issue is **still filed** — only that
+one field is left off. A missing priority must never cost the customer their
+query.
 
 ### Which fields show on a verified document
 
@@ -83,6 +140,17 @@ items:item_name,qty
 - Empty `options` (or an unknown doctype) falls back to the built-in map in
   `src/config/displaySpecs.ts` (Sales/ Purchase / Quotation / Delivery Note +
   a generic fallback).
+
+#### Item tables are hidden
+
+A verified document shows its header fields only — the `items` table is **not**
+rendered, and the item names never leave the Worker.
+
+This is `SHOW_CHILD_TABLES = false` in `src/config/displaySpecs.ts`. The flag is
+enforced inside `resolveDisplaySpec`, the one function every display spec passes
+through, so the child-table syntax above is parsed but **ignored** — a doctype
+whose `options` still lists `items:item_name,qty` will not bring the table back.
+Flip the flag to `true` to restore it; no other change is needed.
 
 ## Development
 
@@ -160,7 +228,7 @@ A Worker gets **50 subrequests per request on the free plan** (1000 on paid).
 One verification spends:
 
 ```
-Σ over sites (1 doctype discovery + 2 per doctype) + 2 per matched site
+Σ over sites (1 doctype discovery + 2 per doctype searched) + 2 per matched site
 ```
 
 The **2 per doctype** is not an oversight — it is the floor. Checked directly
@@ -169,18 +237,23 @@ omits them, `["*", "items"]` is rejected outright (*Field not permitted in
 query: \**), and naming a child field is dropped silently. Fetching the full
 document is therefore always a second request.
 
-| Configuration          | Subrequests                |
-| ---------------------- | -------------------------- |
-| 2 sites × 7 doctypes   | 32                         |
-| 3 sites × 7 doctypes   | 47                         |
-| 4 sites × 7 doctypes   | 62 — **over the limit**    |
+**A prefixed code searches exactly one doctype**, so a scan costs 5 per site
+rather than 1 + 2×N. That is what makes a third or fourth site affordable:
 
-**Before adding a third full-size site**, do one of these:
+| Configuration                 | Subrequests            |
+| ----------------------------- | ---------------------- |
+| 3 sites, prefixed codes       | 15                     |
+| 4 sites, prefixed codes       | 20                     |
+| 8 sites, prefixed codes       | 40                     |
+| 3 sites, **legacy bare hash** | 51 — **over the limit**|
 
-1. **Drop child tables from the display.** Put only scalar fields in the
-   `verification_data` Custom Field's `options` (see above). That halves the
-   per-doctype cost from 2 to 1, taking 3 sites to 26 and 6 sites to 50. No code
-   change at all.
+Only codes with no prefix (or an unknown one) still pay 1 + 2×N and are the only
+reason the budget is ever a concern.
+
+If a bare-hash site has to go past the limit, do one of these:
+
+1. **Re-issue the documents with a prefixed code** and update
+   `verification_data`. That is the actual fix, and it costs nothing at runtime.
 2. **Add a request budget** to `verifyProxy`, so the Worker degrades
    gracefully instead of dying with Cloudflare's `1101` "too many subrequests".
    This is not implemented yet.
@@ -188,6 +261,10 @@ document is therefore always a second request.
    constant (~3 subrequests) however many sites there are, at the price of one
    registry row per document.
 4. **Upgrade to the paid plan.**
+
+Dropping child tables from the display does **not** help here: it saves payload,
+not subrequests, because the second request is the full-document fetch, which
+`findDocumentByHash` makes regardless of what the spec asks for.
 
 Related, and free: removing the `verification_data` Custom Field from a doctype
 you do not verify also removes its cost, because doctype discovery is what finds

@@ -12,7 +12,29 @@ import type { DisplaySpec } from "@/types/verification";
  *   items:item_name,qty
  *
  * (top-level fields comma-separated; child tables as fieldname:sub1,sub2)
+ *
+ * Item (child) tables such as the invoice `items` table are OFF by default —
+ * see SHOW_CHILD_TABLES below.
  */
+
+/**
+ * Whether child tables (e.g. `items`) reach a verified document.
+ *
+ * A verified document shows its header fields only.
+ *
+ * This is enforced in resolveDisplaySpec rather than in the renderer because
+ * that is the one point every display config passes through. Hiding the tables
+ * in the card instead would not hold: a doctype whose `options` in ERPNext still
+ * lists `items:item_name,qty` resolves to a spec that has child tables again, so
+ * the table would come back on its own.
+ *
+ * With this off, sliceDocument() stops copying child rows as well, so item
+ * names never leave the Worker at all — that is the privacy- and payload-sized
+ * half of the win, and the reason the flag belongs here rather than in the UI.
+ *
+ * Set to true to restore the child table rendering; no other change is needed.
+ */
+export const SHOW_CHILD_TABLES = false;
 
 export const CODE_DISPLAY_SPECS: Record<string, DisplaySpec> = {
   "Sales Invoice": {
@@ -89,5 +111,6 @@ export function parseDisplaySpec(options?: string): DisplaySpec | undefined {
 
 /** ERP options win; otherwise the curated code map; otherwise the generic spec. */
 export function resolveDisplaySpec(doctype: string, fromErp?: DisplaySpec): DisplaySpec {
-  return fromErp ?? CODE_DISPLAY_SPECS[doctype] ?? GENERIC_DISPLAY_SPEC;
+  const spec = fromErp ?? CODE_DISPLAY_SPECS[doctype] ?? GENERIC_DISPLAY_SPEC;
+  return SHOW_CHILD_TABLES ? spec : { ...spec, childTables: {} };
 }
