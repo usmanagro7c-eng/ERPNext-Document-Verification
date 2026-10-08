@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import type { DisplaySpec, VerificationErrorKind, VerifiedDocument } from "@/types/verification";
 import { parseDisplaySpec, resolveDisplaySpec } from "@/config/displaySpecs";
-import { isLikelyHash } from "@/lib/verification-hash";
+import { parseVerificationCode, type VerificationCode } from "@/lib/verification-hash";
 import { readSites, type ErpSite } from "@/services/erpSites";
 import { resolveCompanyName } from "@/services/companyProxy";
 
@@ -17,9 +17,12 @@ import { resolveCompanyName } from "@/services/companyProxy";
  *      VERIFICATION_DOCTYPES list when the API user cannot read it. Each
  *      doctype's display list is read from the Custom Field `options`.
  *   2. For each doctype, find the single document whose `verification_data`
- *      equals the scanned hash. The full row is queried ("fields": ["*"]) —
- *      ERPNext rejects any non-*-fields list if it names a field the doctype
- *      does not permit, so no field whitelist is attempted in the query.
+ *      equals the scanned code. A prefixed code (`SIN-…`) names its own doctype,
+ *      so only that one is searched; the full field list costs 2 requests per
+ *      doctype, and searching all of them was what used to push a 3-site scan
+ *      past the Worker's subrequest limit. The full row is queried ("fields":
+ *      ["*"]) — ERPNext rejects any non-*-fields list if it names a field the
+ *      doctype does not permit, so no field whitelist is attempted in the query.
  *   3. BEFORE returning, each matched document is sliced down to the fields in
  *      its display spec — so no full ERP rows, verification hashes or internal
  *      metadata ever leave the Worker.
@@ -93,10 +96,14 @@ const discoveryCache = new Map<string, DiscoveryInfo>();
 export const verifyDocumentServer = createServerFn({ method: "GET", strict: { output: false } })
   .validator((d: { hash: string }) => d)
   .handler(async ({ data }): Promise<VerifyProxyResult> => {
-    const hash = (data.hash ?? "").trim().toLowerCase();
-    if (!isLikelyHash(hash)) {
+    const parsedCode = parseVerificationCode(data.hash ?? "");
+    if (!parsedCode) {
       return { ok: false, kind: "invalid_hash", message: "Verification code is not valid." };
     }
+    // The normalised code, not the raw text: ERPNext stores the prefix upper-
+    // cased, so lower-casing the whole string (as this used to) would look for
+    // "sin-e006…" and quietly miss the stored "SIN-e006…".
+    const hash = parsedCode.code;
 
     const sites = readSites();
     if (!sites.length) {
@@ -109,7 +116,7 @@ export const verifyDocumentServer = createServerFn({ method: "GET", strict: { ou
 
     // 1. Every site is searched at once: a scan waits for the slowest site, not
     //    for their sum, and one site being down must not hide the others' hits.
-    const outcomes = await Promise.all(sites.map((site) => verifyOnSite(site, hash)));
+    const outcomes = await Promise.all(sites.map((site) => verifyOnSite(site, parsedCode)));
 
     for (const outcome of outcomes) {
       if (outcome.problem) {
@@ -171,7 +178,8 @@ export const verifyDocumentServer = createServerFn({ method: "GET", strict: { ou
  * Searches one site for the hash. Never throws: every failure mode is reported
  * as a `problem` so the caller can compare sites instead of unwinding.
  */
-async function verifyOnSite(site: ErpSite, hash: string): Promise<SiteOutcome> {
+async function verifyOnSite(site: ErpSite, code: VerificationCode): Promise<SiteOutcome> {
+  const hash = code.code;
   const outcome: SiteOutcome = {
     siteId: site.id,
     matches: [],
@@ -191,8 +199,18 @@ async function verifyOnSite(site: ErpSite, hash: string): Promise<SiteOutcome> {
   }
   // Resolved up front so the search loop reads the spec it needs directly,
   // rather than looking it back up on a possibly-absent map key.
+  //
+  // A prefix names the one doctype the code can belong to, so only that doctype
+  // is searched: 2 requests instead of 2 per doctype, which is what keeps a scan
+  // inside the Worker's subrequest budget. The fallback to the full list covers
+  // legacy bare hashes, an unrecognised prefix, and a doctype configured in ERP
+  // but not yet listed in DOCTYPE_PREFIXES — none of which should fail a scan.
+  const hinted = code.doctype;
+  const searchDoctypes =
+    hinted && discovery.doctypes.includes(hinted) ? [hinted] : discovery.doctypes;
+
   const specs = new Map<string, DisplaySpec>();
-  for (const doctype of discovery.doctypes) {
+  for (const doctype of searchDoctypes) {
     const spec = resolveDisplaySpec(doctype, discovery.displayByDoctype[doctype]);
     outcome.displayByDoctype[doctype] = spec;
     specs.set(doctype, spec);

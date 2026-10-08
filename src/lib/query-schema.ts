@@ -8,6 +8,12 @@ export const MIN_FILL_MS = 1500;
  * a valid query looks like.
  */
 export const createQuerySchema = z.object({
+  /**
+   * The verification code, in the normalised form the browser parsed it into:
+   * prefix upper-cased, hash lower-cased — e.g. `SIN-e006e6dc…`. This is the
+   * exact string ERPNext stores in `verification_data`, and the server
+   * re-normalises it before its own re-read of the document.
+   */
   hash: z.string().trim().min(1).max(200),
   siteId: z.string().trim().max(60).optional(),
   doctype: z.string().trim().min(1).max(140),
